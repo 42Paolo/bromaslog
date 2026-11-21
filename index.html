@@ -12,6 +12,7 @@
 
   <link rel="preload" as="image" href="assets/bg-poster-960.webp" type="image/webp" media="(max-width: 767px)" fetchpriority="high">
   <link rel="preload" as="image" href="assets/bg-poster.webp" type="image/webp" media="(min-width: 768px)" fetchpriority="high">
+  <link rel="preload" href="assets/fonts/ibm-plex-mono-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="css/preloader.css">
   <link rel="stylesheet" href="css/site.css">
 </head>
@@ -37,9 +38,9 @@
   <!-- ============ SITE (placeholder: replace with the real homepage) ============ -->
   <main id="site">
     <header class="site-header">
-      <span class="site-brand">Bromaslog</span>
-      <nav aria-label="Principale">
-        <a href="#">Prodotti</a>
+      <a class="site-brand" href="#">Bromaslog</a>
+      <nav class="glass-nav" aria-label="Principale">
+        <a href="#" aria-current="page">Prodotti</a>
         <a href="#">Azienda</a>
         <a href="#">Contatti</a>
       </nav>
