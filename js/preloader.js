@@ -5,12 +5,12 @@
  *   1. the screen is plain white;
  *   2. in the middle, the logo builds up one part at a time — BRO, MAS, LOG, 0.2s apart — each part
  *      sliding in a little and widening from its centre;
- *   3. just as the logo completes, two dark shapes start from the left and right sides and grow
+ *   3. shortly after the logo completes, two dark shapes start from the left and right sides and grow
  *      toward the middle until the screen is black (the soft, arch-shaped edge is drawn by a small
  *      WebGL fragment shader);
  *   4. the black fades to transparent and the carbon-fibre site background is revealed.
  *
- * Pacing is fast, like the reference (about 2.1s from white to the site). By default the dark fill comes
+ * Pacing is calm (about 3.8s from white to the site; see CONFIG). By default the dark fill comes
  * from the TOP and the logo parts slide in from above (CONFIG.direction); set it to 'bottom' for the
  * original orientation. All timings live in CONFIG. A slow page load simply holds the finished logo:
  * the exit never starts before the page is ready.
@@ -20,11 +20,12 @@
 
   var CONFIG = {
     direction: 'top',        // 'top' = fill comes from the top, parts slide in from above · 'bottom' = the opposite
-    // Speeds measured on the reference (its return-visit speed). Lower = slower; every duration is divided by these.
-    logoSpeed: 1.8,          // timeScale of the logo parts: each part takes ~0.65s to build
-    waveSpeed: 2,            // timeScale of the dark fill: ~0.6s to cover the screen, ~0.5s to fade out (use ~1 for a calmer feel)
-    exitOffset: -0.25,       // the fill starts this long after the logo is complete (negative = it starts just before, overlapping the end)
-    partsExitDelay: 0.5,     // after the fill starts, the parts start leaving this late (s): the fill covers them first
+    // Calm pacing, a little faster than the first slow version. Lower = slower; every duration is divided by these.
+    // (The reference's own speeds are 1.8 and 2: set logoSpeed 1.8, waveSpeed 2, exitOffset -0.25, partsExitDelay 0.5 for that.)
+    logoSpeed: 1.6,          // timeScale of the logo parts: each part takes ~0.75s to build
+    waveSpeed: 1.1,          // timeScale of the dark fill: ~1.1s to cover the screen, ~0.9s to fade out
+    exitOffset: 0.4,         // the fill starts this long after the logo is complete (negative = it starts just before, overlapping the end)
+    partsExitDelay: 0.8,     // after the fill starts, the parts start leaving this late (s): the fill covers them first
     respectReducedMotion: true,   // false = always play the full animation, even if the visitor's system asks for less motion
     maxWaitMs: 6000,         // failsafe: never hold the visitor longer than this waiting for "ready"
     logo: {
@@ -38,7 +39,7 @@
     fill: {
       levelFrom: -0.55, levelTo: 3.0,   // how far the dark has advanced (-0.55: a faint hint at the corners, 3.0: everything)
       depthFrom: 1.3, depthTo: 0.3,     // how much later the middle is covered than the sides (arch depth)
-      rampIn: 0.1,                      // seconds to fade the first hint in, so it never "pops"
+      rampIn: 0.2,                      // seconds to fade the first hint in, so it never "pops"
       color: [8 / 255, 8 / 255, 8 / 255]
     }
   };
