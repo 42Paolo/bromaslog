@@ -10,8 +10,8 @@
  * data-i18n-html (the text may contain <br>) and data-i18n-attr="attribute:key" (e.g. aria-label).
  * The contact panel re-writes itself through the "bromaslog:languagechange" event (see js/contact.js).
  *
- * Not translated on purpose: the claim on the right of the home ("Leading the Industrial Revolution…", English in the
- * design) and the "Contact" menu word. The e-mail subject / labels sent to you stay in Italian.
+ * Everything visible is translated, including the claim on the right of the home. The e-mail subject / labels sent
+ * to you stay in Italian.
  */
 (function () {
   'use strict';
@@ -23,10 +23,12 @@
       'nav.aria': 'Principale',
       'nav.about': 'Chi siamo',
       'nav.portfolio': 'Portfolio',
-      'nav.contact': 'Contact',
+      'nav.contact': 'Contatti',
       'lang.aria': 'Cambia lingua: inglese',
       'hero.eyebrow': 'Tessuti tecnici industriali',
       'hero.title': 'Precisione<br>in ogni fibra.',
+      'hero.claim': '<span class="ln">Guidiamo la</span> <span class="ln">Rivoluzione Industriale con</span> <span class="ln">una Tecnologia Composita all\'avanguardia.</span>',
+      'hero.sub': '<span class="ln">Soluzioni tessili avanzate per</span> <span class="ln">industrie più resistenti, leggere ed efficienti.</span>',
       'panel.close': 'Chiudi il pannello contatti',
       'panel.title': 'Contattaci',
       'panel.lead': 'Parlaci del tuo progetto. Il nostro team ti ricontatterà al più presto.',
@@ -55,6 +57,8 @@
       'lang.aria': 'Change language: Italian',
       'hero.eyebrow': 'Industrial technical textiles',
       'hero.title': 'Precision<br>in every fibre.',
+      'hero.claim': '<span class="ln">Leading the</span> <span class="ln">Industrial Revolution with</span> <span class="ln">Cutting-edge Composite Technology.</span>',
+      'hero.sub': '<span class="ln">Advanced textile solutions for</span> <span class="ln">stronger, lighter, and more efficient industries.</span>',
       'panel.close': 'Close the contact panel',
       'panel.title': 'Contact us',
       'panel.lead': 'Tell us about your project. Our team will get back to you as soon as possible.',
@@ -184,7 +188,7 @@
     }
 
     var nav = document.getElementById('nav');
-    var texts = gsap.utils.toArray('.nav-links > a, .site-eyebrow, .site-hero h1');
+    var texts = gsap.utils.toArray('.nav-links > a, .site-eyebrow, .site-hero h1, .site-claim, .site-sub');
     var w0 = nav.getBoundingClientRect().width;
     root.classList.add('is-switching-lang');
 
