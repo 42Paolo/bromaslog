@@ -1,28 +1,30 @@
 /*
  * Bromaslog preloader.
  *
- * Sequence (measured on a screen recording of the reference loader, then slowed down):
+ * Sequence (timings measured on a screen recording of the reference loader):
  *   1. the screen is plain white;
  *   2. in the middle, the logo builds up one part at a time — BRO, MAS, LOG, 0.2s apart — each part
  *      sliding in a little and widening from its centre;
- *   3. once the whole logo has been on screen for a moment, two dark shapes start from the left and
- *      right sides and grow toward the middle until the screen is black (the soft, arch-shaped edge
- *      is drawn by a small WebGL fragment shader);
+ *   3. just as the logo completes, two dark shapes start from the left and right sides and grow
+ *      toward the middle until the screen is black (the soft, arch-shaped edge is drawn by a small
+ *      WebGL fragment shader);
  *   4. the black fades to transparent and the carbon-fibre site background is revealed.
  *
- * By default the dark fill comes from the TOP and the logo parts slide in from above (CONFIG.direction);
- * set it to 'bottom' for the original orientation. All timings live in CONFIG. A slow page load simply
- * extends step 2: the exit never starts before the page is ready.
+ * Pacing is fast, like the reference (about 2.1s from white to the site). By default the dark fill comes
+ * from the TOP and the logo parts slide in from above (CONFIG.direction); set it to 'bottom' for the
+ * original orientation. All timings live in CONFIG. A slow page load simply holds the finished logo:
+ * the exit never starts before the page is ready.
  */
 (function () {
   'use strict';
 
   var CONFIG = {
     direction: 'top',        // 'top' = fill comes from the top, parts slide in from above · 'bottom' = the opposite
-    logoSpeed: 1.4,          // timeScale of the logo parts: each part takes ~0.9s to build
-    waveSpeed: 0.8,          // timeScale of the dark fill: ~1.5s to cover the screen, ~1.25s to fade out
-    hold: 0.5,               // seconds the complete logo stays on screen before the fill starts
-    partsExitDelay: 1.1,     // after the fill starts, the parts start leaving this late (s): the fill covers them first
+    // Speeds measured on the reference (its return-visit speed). Lower = slower; every duration is divided by these.
+    logoSpeed: 1.8,          // timeScale of the logo parts: each part takes ~0.65s to build
+    waveSpeed: 2,            // timeScale of the dark fill: ~0.6s to cover the screen, ~0.5s to fade out (use ~1 for a calmer feel)
+    exitOffset: -0.25,       // the fill starts this long after the logo is complete (negative = it starts just before, overlapping the end)
+    partsExitDelay: 0.5,     // after the fill starts, the parts start leaving this late (s): the fill covers them first
     respectReducedMotion: true,   // false = always play the full animation, even if the visitor's system asks for less motion
     maxWaitMs: 6000,         // failsafe: never hold the visitor longer than this waiting for "ready"
     logo: {
@@ -30,13 +32,13 @@
       pad: 60,                    // canvas padding above/below the logo (units), must match CSS aspect-ratio
       shift: 40,                  // how far a part slides while entering/leaving (units)
       start: 0.1,                 // delay before the first part
-      stagger: 0.2,               // seconds between BRO → MAS → LOG, on the way in and on the way out
+      stagger: 0.2,               // seconds between BRO → MAS → LOG, on the way in and on the way out (reference: ~0.1)
       ink: '8, 8, 8'              // #080808
     },
     fill: {
       levelFrom: -0.55, levelTo: 3.0,   // how far the dark has advanced (-0.55: a faint hint at the corners, 3.0: everything)
       depthFrom: 1.3, depthTo: 0.3,     // how much later the middle is covered than the sides (arch depth)
-      rampIn: 0.2,                      // seconds to fade the first hint in, so it never "pops"
+      rampIn: 0.1,                      // seconds to fade the first hint in, so it never "pops"
       color: [8 / 255, 8 / 255, 8 / 255]
     }
   };
@@ -352,8 +354,8 @@
       }, 1.4 / WS);
   }
 
-  // The exit starts once the whole logo has been on screen for `hold` seconds, and never before the page is ready.
+  // The exit starts `exitOffset` seconds after the logo is complete, and never before the page is ready.
   var introTotal = Math.max.apply(null, introEnd);
-  var exitDelay = new Promise(function (resolve) { gsap.delayedCall(introTotal + CONFIG.hold, resolve); });
+  var exitDelay = new Promise(function (resolve) { gsap.delayedCall(Math.max(0, introTotal + CONFIG.exitOffset), resolve); });
   Promise.all([pageReady, exitDelay]).then(startExit);
 })();
