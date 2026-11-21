@@ -1,0 +1,61 @@
+:root {
+  --pl-base: #191B1D;
+  --pl-ink: #F2F0EB;
+  --pl-logo-w: clamp(150px, 46vw, 260px);
+}
+
+@media (min-width: 768px) {
+  :root { --pl-logo-w: clamp(240px, 19.6vw, 380px); }
+}
+
+html.is-loading { overflow: hidden; }
+html.no-preloader #preloader { display: none; }
+
+#preloader {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  overflow: hidden;
+  background: var(--pl-base);            /* layer 1 */
+  contain: layout paint style;
+  will-change: transform;
+}
+
+/* layer 2 */
+.pl-fabric,
+.pl-overlay,
+.pl-logo { position: absolute; inset: 0; }
+
+.pl-fabric picture { display: block; position: absolute; inset: 0; }
+
+.pl-poster,
+.pl-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform-origin: 50% 50%;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.pl-video { opacity: 0; pointer-events: none; }
+
+/* layer 3: same colour as the base so the fabric "emerges" from the charcoal */
+.pl-overlay { background: var(--pl-base); }
+
+/* layer 4 */
+.pl-logo {
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+
+.pl-logo-svg {
+  display: block;
+  width: var(--pl-logo-w);
+  height: auto;
+  aspect-ratio: 327.13 / 225.25;
+  overflow: visible;
+}
