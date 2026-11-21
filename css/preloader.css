@@ -1,6 +1,6 @@
 :root {
-  --pl-base: #191B1D;
-  --pl-ink: #F2F0EB;
+  --pl-paper: #F2F0EB;
+  --pl-ink: #191B1D;
   --pl-logo-w: clamp(150px, 46vw, 260px);
 }
 
@@ -8,54 +8,40 @@
   :root { --pl-logo-w: clamp(240px, 19.6vw, 380px); }
 }
 
-html.is-loading { overflow: hidden; }
+html.is-loading { overflow: hidden; background: var(--pl-paper); }
 html.no-preloader #preloader { display: none; }
 
 #preloader {
   position: fixed;
   inset: 0;
   z-index: 9999;
-  overflow: hidden;
-  background: var(--pl-base);            /* layer 1 */
-  contain: layout paint style;
-  will-change: transform;
-}
-
-/* layer 2 */
-.pl-fabric,
-.pl-overlay,
-.pl-logo { position: absolute; inset: 0; }
-
-.pl-fabric picture { display: block; position: absolute; inset: 0; }
-
-.pl-poster,
-.pl-video {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transform-origin: 50% 50%;
-  user-select: none;
-  -webkit-user-drag: none;
-}
-
-.pl-video { opacity: 0; pointer-events: none; }
-
-/* layer 3: same colour as the base so the fabric "emerges" from the charcoal */
-.pl-overlay { background: var(--pl-base); }
-
-/* layer 4 */
-.pl-logo {
   display: grid;
   place-items: center;
-  pointer-events: none;
+  background: var(--pl-paper);
+  contain: layout paint style;
 }
 
-.pl-logo-svg {
+/* Set when the wave fully covers the screen, right before the wave fades out. */
+#preloader.is-hidden { background: transparent; pointer-events: none; }
+
+/* Canvas = logo box + vertical padding (60 + 60 units) so parts can slide in from outside the logo. */
+.pl-logo {
   display: block;
   width: var(--pl-logo-w);
   height: auto;
-  aspect-ratio: 327.13 / 225.25;
-  overflow: visible;
+  aspect-ratio: 327.13 / 345.25;
 }
+
+/* Closing curtain (WebGL canvas, or a plain div when WebGL is unavailable). Created by preloader.js. */
+#pl-wave {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  visibility: hidden;
+  background: transparent;
+}
+
+#pl-wave.is-fallback { background: var(--pl-ink); will-change: transform, opacity; }
