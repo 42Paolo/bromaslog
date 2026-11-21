@@ -173,9 +173,9 @@ body {
   color: rgba(255, 255, 255, .62);
 }
 
-/* On narrow screens the claim joins the left-hand stack, above the label and the headline. */
+/* On narrow screens the claim joins the left-hand stack, below the label and the headline (the last item, at the bottom). */
 @media (max-width: 800px) {
-  .site-tagline-wrap { position: static; display: block; margin-bottom: 32px; }
+  .site-tagline-wrap { position: static; display: block; order: 3; margin: 28px 0 0; }
   .site-tagline { width: auto; max-width: 34ch; }
   .site-tagline .ln { display: inline; }
 }
