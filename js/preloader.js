@@ -9,24 +9,26 @@
  * comes down from the top and closes toward the bottom-middle; it then fades to transparent and the
  * carbon-fibre site background shows through.
  *
- * Timing copied from a screen recording of icomat's loader (return-visit speed): the exit starts 0.2s
- * after the logo starts entering — overlapping it — or as soon as the page is ready if that is later,
- * so a slow load just holds the finished logo. Wave: ~0.7s to cover, ~0.5s to fade out.
+ * Timing: BRO, MAS, LOG enter 0.3s apart (~1.2s each); the complete logo is held ~0.7s; then the wave
+ * covers the screen (~1.75s) and fades to transparent (~1.25s). A slow page load just extends the hold.
+ * Everything is tunable in CONFIG (icomat itself runs ~2× faster than this).
  */
 (function () {
   'use strict';
 
   var CONFIG = {
-    logoSpeed: 1.8,          // timeScale of the logo parts (icomat: 1.8)
-    waveSpeed: 2,            // timeScale of the wave (icomat: 2 on return visits, 1.2 on the first)
-    waveDelay: 0.2,          // exit starts this long after the logo starts entering (icomat: 0.2s)
+    // Slow, deliberate version (icomat itself runs 1.8 / 2): every duration below is divided by these.
+    logoSpeed: 1,            // timeScale of the logo parts: each part takes ~1.2s to come in
+    waveSpeed: 0.8,          // timeScale of the wave: ~1.75s to cover, ~1.25s to fade out
+    hold: 0.7,               // seconds the complete logo stays on screen before the exit starts
+    logoFadeDelay: 0.8,      // after the exit starts, the logo itself starts fading this late (s)
     maxWaitMs: 6000,         // failsafe: never hold the visitor longer than this waiting for "ready"
     logo: {
       vbW: 327.13, vbH: 225.25,   // logo viewBox
       pad: 60,                    // canvas padding above/below the logo (units), must match CSS aspect-ratio
       shift: 40,                  // how far a part travels while entering/leaving (icomat: 100 on 840 wide)
       start: 0.1,                 // delay before the first part
-      stagger: 0.1,               // delay between BRO → MAS → LOG (icomat: 0.1)
+      stagger: 0.3,               // seconds between BRO → MAS → LOG, on the way in and on the way out
       ink: '25, 27, 29'           // #191B1D
     },
     wave: {
@@ -320,15 +322,14 @@
     waveApi.render();
     gsap.ticker.add(waveApi.render);
 
-    var now = intro.time();
     var ex = gsap.timeline({ onUpdate: drawLogo });
 
     parts.forEach(function (p, i) {
-      var at = Math.max(0, introEnd[i] - now);   // never fight a part that is still entering
+      var at = i * L.stagger;                    // BRO leaves first, then MAS, then LOG
       ex.to(p, { gl: 0.5, gr: 0.5, a: 0, duration: 1.2 / LS, ease: 'power2.inOut' }, at)
         .to(p, { y: L.shift, duration: 1.2 / LS, ease: 'power2.inOut' }, at);
     });
-    ex.to(logoCanvas, { opacity: 0, duration: 1.5, ease: 'power2.inOut' }, 0.4);
+    ex.to(logoCanvas, { opacity: 0, duration: 1.5, ease: 'power2.inOut' }, CONFIG.logoFadeDelay);
 
     ex.to(wu, { offsetY: W.offsetTo, duration: 1.2 / WS, ease: 'power2.in' }, 0)
       .to(wu, { amp: W.ampTo, duration: 1.4 / WS, ease: 'power2.in' }, 0)
@@ -343,7 +344,8 @@
       }, 1.4 / WS);
   }
 
-  // Start 0.2s after the logo begins (icomat), but never before the page is ready.
-  var exitDelay = new Promise(function (resolve) { gsap.delayedCall(L.start + CONFIG.waveDelay, resolve); });
+  // The exit starts once the whole logo has been on screen for `hold` seconds, and never before the page is ready.
+  var introTotal = Math.max.apply(null, introEnd);
+  var exitDelay = new Promise(function (resolve) { gsap.delayedCall(introTotal + CONFIG.hold, resolve); });
   Promise.all([pageReady, exitDelay]).then(startExit);
 })();
