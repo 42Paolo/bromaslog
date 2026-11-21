@@ -144,7 +144,40 @@ body {
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
-  padding: 0 clamp(20px, 4vw, 56px) clamp(32px, 8vh, 96px);
+  /* headline + label sit close to the bottom-left corner */
+  padding: 0 clamp(16px, 2.8vw, 40px) clamp(24px, 4.5vh, 48px);
+}
+
+/* Claim on the right: its centre is at 53% of the page height (the wrapper spans from 6% down to the bottom). */
+.site-hero { position: relative; }
+.site-tagline-wrap {
+  position: absolute;
+  top: 6%;
+  bottom: 0;
+  right: var(--pad-x);
+  display: flex;
+  align-items: center;
+  pointer-events: none;
+}
+.site-tagline { width: max-content; max-width: 42vw; pointer-events: auto; }
+.site-tagline .ln { display: block; }
+.site-claim {
+  margin: 0 0 20px;
+  font: 500 clamp(18px, 1.5vw, 28px) / 1.12 var(--font-sans);
+  letter-spacing: -.01em;
+  color: #fff;
+}
+.site-sub {
+  margin: 0;
+  font: 400 clamp(14px, 1.15vw, 20px) / 1.35 var(--font-sans);
+  color: rgba(255, 255, 255, .62);
+}
+
+/* On narrow screens the claim joins the left-hand stack, above the label and the headline. */
+@media (max-width: 800px) {
+  .site-tagline-wrap { position: static; display: block; margin-bottom: 32px; }
+  .site-tagline { width: auto; max-width: 34ch; }
+  .site-tagline .ln { display: inline; }
 }
 
 .site-eyebrow { margin: 0 0 16px; font-family: var(--font-mono); font-size: 12px; letter-spacing: .14em; text-transform: uppercase; opacity: .6; }
