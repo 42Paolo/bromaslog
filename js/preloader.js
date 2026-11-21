@@ -24,7 +24,7 @@
     // (The reference's own speeds are 1.8 and 2: set logoSpeed 1.8, waveSpeed 2, exitOffset -0.25, partsExitDelay 0.5 for that.)
     logoSpeed: 1.6,          // timeScale of the logo parts: each part takes ~0.75s to build
     waveSpeed: 1.1,          // timeScale of the dark fill: ~1.1s to cover the screen, ~0.9s to fade out
-    exitOffset: 0.4,         // the fill starts this long after the logo is complete (negative = it starts just before, overlapping the end)
+    exitOffset: 0.1,         // the fill starts this long after the logo is complete (negative = it starts just before, overlapping the end)
     partsExitDelay: 0.8,     // after the fill starts, the parts start leaving this late (s): the fill covers them first
     respectReducedMotion: true,   // false = always play the full animation, even if the visitor's system asks for less motion
     maxWaitMs: 6000,         // failsafe: never hold the visitor longer than this waiting for "ready"
