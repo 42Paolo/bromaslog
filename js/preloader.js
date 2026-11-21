@@ -9,20 +9,24 @@
  * comes down from the top and closes toward the bottom-middle; it then fades to transparent and the
  * carbon-fibre site background shows through.
  *
- * One GSAP timeline. It holds after the logo is in until the page is ready, then plays the exit.
+ * Timing copied from a screen recording of icomat's loader (return-visit speed): the exit starts 0.2s
+ * after the logo starts entering — overlapping it — or as soon as the page is ready if that is later,
+ * so a slow load just holds the finished logo. Wave: ~0.7s to cover, ~0.5s to fade out.
  */
 (function () {
   'use strict';
 
   var CONFIG = {
-    speed: 1.2,              // global timeScale (icomat: 1.2 on first visit)
+    logoSpeed: 1.8,          // timeScale of the logo parts (icomat: 1.8)
+    waveSpeed: 2,            // timeScale of the wave (icomat: 2 on return visits, 1.2 on the first)
+    waveDelay: 0.2,          // exit starts this long after the logo starts entering (icomat: 0.2s)
     maxWaitMs: 6000,         // failsafe: never hold the visitor longer than this waiting for "ready"
     logo: {
       vbW: 327.13, vbH: 225.25,   // logo viewBox
       pad: 60,                    // canvas padding above/below the logo (units), must match CSS aspect-ratio
       shift: 40,                  // how far a part travels while entering/leaving (icomat: 100 on 840 wide)
-      start: 0.3,                 // delay before the first part
-      stagger: 0.15,              // delay between BRO → MAS → LOG (icomat: 0.1)
+      start: 0.1,                 // delay before the first part
+      stagger: 0.1,               // delay between BRO → MAS → LOG (icomat: 0.1)
       ink: '25, 27, 29'           // #191B1D
     },
     wave: {
@@ -295,41 +299,51 @@
   }
 
   var W = CONFIG.wave;
-  var tl = gsap.timeline({ onUpdate: drawLogo });
-  tl.timeScale(CONFIG.speed);
+  var LS = CONFIG.logoSpeed;
+  var WS = CONFIG.waveSpeed;
+  var introEnd = [];   // when (s, on the intro timeline) each part has finished entering
 
   // ENTER — BRO, MAS, LOG slide in from above, each widening from its centre (icomat's arc cycle, flipped).
+  var intro = gsap.timeline({ onUpdate: drawLogo });
   parts.forEach(function (p, i) {
     var at = L.start + i * L.stagger;
-    tl.fromTo(p, { y: -L.shift }, { y: 0, duration: 1, ease: 'power1.out' }, at)
-      .fromTo(p, { gl: 0.5, a: 0 }, { gl: 0, a: 1, duration: 1.2, ease: 'power2.out' }, at)
-      .fromTo(p, { gr: 0.5 }, { gr: 1, duration: 1.2, ease: 'power2.out' }, at);
+    intro.fromTo(p, { y: -L.shift }, { y: 0, duration: 1 / LS, ease: 'power1.out' }, at)
+      .fromTo(p, { gl: 0.5, a: 0 }, { gl: 0, a: 1, duration: 1.2 / LS, ease: 'power2.out' }, at)
+      .fromTo(p, { gr: 0.5 }, { gr: 1, duration: 1.2 / LS, ease: 'power2.out' }, at);
+    introEnd.push(at + 1.2 / LS);
   });
 
-  // HOLD — logo stays complete and still until the page is ready (never waits for the video).
-  var exitAt = tl.duration();
-  tl.addPause(exitAt, function () { pageReady.then(function () { tl.resume(); }); });
-
   // EXIT — logo leaves downward while the wave descends from the top and closes toward the middle.
-  tl.add(function () {
+  function startExit() {
+    if (finished) return;
     waveApi.el.style.visibility = 'visible';
     waveApi.render();
     gsap.ticker.add(waveApi.render);
-  }, exitAt);
 
-  parts.forEach(function (p, i) {
-    var at = exitAt + i * L.stagger;
-    tl.to(p, { gl: 0.5, gr: 0.5, a: 0, duration: 1.2, ease: 'power2.inOut' }, at)
-      .to(p, { y: L.shift, duration: 1.2, ease: 'power2.inOut' }, at);
-  });
-  tl.to(logoCanvas, { opacity: 0, duration: 1.5, ease: 'power2.inOut' }, exitAt + 0.4);
+    var now = intro.time();
+    var ex = gsap.timeline({ onUpdate: drawLogo });
 
-  tl.to(wu, { offsetY: W.offsetTo, duration: 1.2, ease: 'power2.in' }, exitAt)
-    .to(wu, { amp: W.ampTo, duration: 1.4, ease: 'power2.in' }, exitAt)
-    // Fully covered → paper background goes away, then the wave fades to transparent: fabric appears.
-    .to(wu, {
-      opacity: 0, duration: 1, ease: 'power1.in',
-      onStart: function () { el.classList.add('is-hidden'); }
-    }, exitAt + 1.4)
-    .add(finish);
+    parts.forEach(function (p, i) {
+      var at = Math.max(0, introEnd[i] - now);   // never fight a part that is still entering
+      ex.to(p, { gl: 0.5, gr: 0.5, a: 0, duration: 1.2 / LS, ease: 'power2.inOut' }, at)
+        .to(p, { y: L.shift, duration: 1.2 / LS, ease: 'power2.inOut' }, at);
+    });
+    ex.to(logoCanvas, { opacity: 0, duration: 1.5, ease: 'power2.inOut' }, 0.4);
+
+    ex.to(wu, { offsetY: W.offsetTo, duration: 1.2 / WS, ease: 'power2.in' }, 0)
+      .to(wu, { amp: W.ampTo, duration: 1.4 / WS, ease: 'power2.in' }, 0)
+      .to(wu, {
+        opacity: 0, duration: 1 / WS, ease: 'power1.in',
+        onStart: function () {
+          // Wave is now 100% opaque: drop the paper + logo underneath, then fade the wave out.
+          el.classList.add('is-hidden');
+          window.dispatchEvent(new CustomEvent('preloader:reveal'));
+        },
+        onComplete: function () { ex.kill(); intro.kill(); finish(); }
+      }, 1.4 / WS);
+  }
+
+  // Start 0.2s after the logo begins (icomat), but never before the page is ready.
+  var exitDelay = new Promise(function (resolve) { gsap.delayedCall(L.start + CONFIG.waveDelay, resolve); });
+  Promise.all([pageReady, exitDelay]).then(startExit);
 })();

@@ -23,6 +23,7 @@ html.no-preloader #preloader { display: none; }
 
 /* Set when the wave fully covers the screen, right before the wave fades out. */
 #preloader.is-hidden { background: transparent; pointer-events: none; }
+#preloader.is-hidden .pl-logo { visibility: hidden; }
 
 /* Canvas = logo box + vertical padding (60 + 60 units) so parts can slide in from outside the logo. */
 .pl-logo {
