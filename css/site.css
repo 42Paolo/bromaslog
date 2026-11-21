@@ -99,7 +99,7 @@ body {
   line-height: 1;
   letter-spacing: .1em;
   text-transform: uppercase;
-  padding: 8px 34px;
+  padding: 18px 34px;
   border-radius: calc(var(--nav-radius) - 3px);
   opacity: .72;
   transition: opacity .2s ease, background-color .2s ease;
@@ -117,7 +117,7 @@ body {
 @media (max-width: 600px) {
   .site-brand { font-size: 12px; }
   .glass-nav { gap: 2px; }
-  .glass-nav a { padding: 7px 9px; font-size: 10px; letter-spacing: .05em; }
+  .glass-nav a { padding: 17px 9px; font-size: 10px; letter-spacing: .05em; }
 }
 
 .site-hero {
