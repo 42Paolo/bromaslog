@@ -27,7 +27,8 @@ html.is-contact-open { overflow: hidden; }
 }
 
 /* ---------- while the bar is growing, GSAP owns the labels' opacity/position: no CSS transitions on them ---------- */
-.glass-nav.is-expanding .nav-links a { transition: none; }
+.glass-nav.is-expanding .nav-links a,
+.glass-nav.is-expanding .nav-links .lang-toggle { transition: none; }
 
 /* ---------- the panel ---------- */
 .nav-panel {

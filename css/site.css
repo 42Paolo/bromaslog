@@ -134,7 +134,8 @@ body {
 /* While the bar is growing, the labels stay pinned to the bar's top-right corner. */
 .glass-nav.is-expanding .nav-links { position: absolute; top: calc(3 * var(--vr)); right: calc(3 * var(--vr)); }
 
-.nav-links a {
+.nav-links a,
+.nav-links .lang-toggle {
   font-family: var(--font-mono);
   font-weight: 400;
   font-size: calc(11 * var(--vr));
@@ -143,13 +144,45 @@ body {
   text-transform: uppercase;
   padding: calc(18 * var(--vr)) calc(34 * var(--vr));
   border-radius: calc(var(--nav-radius) - 3 * var(--vr));
+  color: inherit;
   opacity: .95;                      /* nearly full white (was .83) */
   transition: opacity .2s ease, background-color .2s ease;
 }
 .nav-links a:hover,
+.nav-links .lang-toggle:hover,
 .nav-links a.is-cta,                    /* the highlighted item (Contact) */
 .nav-links a[aria-current="page"] { opacity: 1; background-color: rgba(255, 255, 255, .10); }
-.nav-links a:focus-visible { opacity: 1; outline: 2px solid var(--paper); outline-offset: -2px; }
+.nav-links a:focus-visible,
+.nav-links .lang-toggle:focus-visible { opacity: 1; outline: 2px solid var(--paper); outline-offset: -2px; }
+
+/* Language switch (js/i18n.js): two letters, each in its own clipped slot so it can roll up into the next one. */
+.nav-links .lang-toggle {
+  appearance: none;
+  -webkit-appearance: none;
+  background: none;
+  border: 0;
+  margin: 0;
+  cursor: pointer;
+  padding: calc(18 * var(--vr)) calc(22 * var(--vr));
+}
+.nav-links .lang-toggle { position: relative; }
+.nav-links .lang-toggle::after { content: ""; position: absolute; inset: calc(-4 * var(--vr)) calc(-6 * var(--vr)); }   /* bigger touch target, same look */
+.lang-label { display: inline-flex; }
+.lg { display: inline-block; height: 1em; overflow: hidden; line-height: 1; }
+.lg-in { display: flex; flex-direction: column; }
+.lg-in span { display: block; height: 1em; line-height: 1; }
+
+/* Thin vertical rule between the language switch and "Chi siamo": shorter than the bar, so it never touches the top or the bottom. */
+.nav-sep {
+  align-self: center;
+  flex: none;
+  width: 1px;
+  height: calc(20 * var(--vr));
+  background: rgba(255, 255, 255, .22);
+}
+
+/* While the language changes, GSAP owns the labels' opacity: no CSS transition on them. */
+html.is-switching-lang .nav-links a { transition: none; }
 
 /* Browsers without backdrop-filter simply get the same dark bar, slightly more opaque. */
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
@@ -159,7 +192,9 @@ body {
 @media (max-width: 767px) {
   .site-brand { font-size: calc(12 * var(--vr)); }
   .nav-links { gap: calc(2 * var(--vr)); }
-  .nav-links a { padding: calc(17 * var(--vr)) calc(9 * var(--vr)); font-size: calc(10 * var(--vr)); letter-spacing: .05em; }
+  .nav-links a { padding: calc(17 * var(--vr)) calc(7 * var(--vr)); font-size: calc(10 * var(--vr)); letter-spacing: .05em; }
+  .nav-links .lang-toggle { padding: calc(17 * var(--vr)) calc(6 * var(--vr)); font-size: calc(10 * var(--vr)); letter-spacing: .05em; }
+  .nav-sep { height: calc(18 * var(--vr)); }
 }
 
 .site-hero {

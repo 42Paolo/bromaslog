@@ -36,6 +36,9 @@
     barBg: 'rgba(10, 11, 13, 0.90)'     // must match .glass-nav in css/site.css
   };
 
+  // Texts for the visitor's language (js/i18n.js): messages and the typed texts follow the language switch.
+  function t(key) { return window.BromaslogI18n ? window.BromaslogI18n.t(key) : key; }
+
   var root = document.documentElement;
   var linksNav = nav.querySelector('.nav-links');
   var linkEls = gsap.utils.toArray(linksNav.children);
@@ -54,9 +57,12 @@
   /* typing: split every [data-type] text into characters, reveal them on a schedule */
   /* ------------------------------------------------------------------ */
 
+  // Can run again after a language change: an element that was already split keeps its text in data-type-text,
+  // one whose text has just been replaced by js/i18n.js is plain text again.
   function prepare(el) {
-    var text = (el.textContent || '').replace(/\s+/g, ' ').trim();
-    var spoken = el.getAttribute('data-sr') || text;             // what screen readers read (no "*")
+    var text = ((el.querySelector('.typed') ? el.getAttribute('data-type-text') : el.textContent) || '').replace(/\s+/g, ' ').trim();
+    el.setAttribute('data-type-text', text);
+    var spoken = text.replace(/\s*\*$/, '');                     // what screen readers read (no "*")
     el.textContent = '';
 
     var sr = document.createElement('span');
@@ -91,7 +97,9 @@
 
   var segments = [];
   var typingTotal = 0;
-  (function schedule() {
+  function buildTyping() {
+    segments = [];
+    typingTotal = 0;
     var items = gsap.utils.toArray(panel.querySelectorAll('[data-type]')).map(prepare);
     var order = [];                                   // section names, in order of first appearance
     items.forEach(function (it) { if (order.indexOf(it.group) < 0) order.push(it.group); });
@@ -118,7 +126,10 @@
       segments.push({ chars: item.chars, times: times, shown: 0 });
       typingTotal = Math.max(typingTotal, start + duration);
     });
-  })();
+  }
+  buildTyping();
+  // The language switch has just rewritten the panel's texts (the panel is closed then): split them again.
+  window.addEventListener('bromaslog:languagechange', function () { if (state === 'closed') buildTyping(); });
 
   // Show exactly the characters whose time has come.
   function renderTyping(t) {
@@ -377,7 +388,7 @@
     var accessKey = form.getAttribute('data-access-key');         // Web3Forms
     var endpoint = form.getAttribute('data-endpoint') || (accessKey ? 'https://api.web3forms.com/submit' : '');
     var mailto = form.getAttribute('data-mailto');
-    setStatus('Invio in corso…');
+    setStatus(t('form.sending'));
     sendBtn.disabled = true;
 
     if (endpoint) {
@@ -397,10 +408,10 @@
         })
         .then(function () {
           form.reset();
-          setStatus('Grazie! Abbiamo ricevuto la tua richiesta: ti ricontatteremo al più presto.', 'ok');
+          setStatus(t('form.ok'), 'ok');
         })
         .catch(function () {
-          setStatus('Invio non riuscito. Riprova tra poco o scrivici a ' + mailto + '.', 'error');
+          setStatus(t('form.error').replace('{mail}', mailto), 'error');
         })
         .then(function () { sendBtn.disabled = false; });
       return;
@@ -418,7 +429,7 @@
     window.location.href = 'mailto:' + mailto +
       '?subject=' + encodeURIComponent(SUBJECT) +
       '&body=' + encodeURIComponent(lines.join('\n'));
-    setStatus('Si apre la tua app di posta: premi invia per completare la richiesta.', 'ok');
+    setStatus(t('form.mailto'), 'ok');
     sendBtn.disabled = false;
   });
 })();
