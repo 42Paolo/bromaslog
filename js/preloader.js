@@ -1,41 +1,42 @@
 /*
- * Bromaslog preloader — modelled on the icomat.co.uk loader, mirrored top ↔ bottom.
+ * Bromaslog preloader.
  *
- * icomat: the logo (7 arcs, canvas 2D) rises from below, each arc widening from the centre with a
- * horizontal alpha gradient; then a WebGL plane (soft sine-wave edge, uOffsetY/uAmplitude/uOpacity
- * driven by GSAP) rises from the bottom and closes toward the middle, and fades out.
+ * Sequence (measured on a screen recording of the reference loader, then slowed down):
+ *   1. the screen is plain white;
+ *   2. in the middle, the logo builds up one part at a time — BRO, MAS, LOG, 0.2s apart — each part
+ *      sliding in a little and widening from its centre;
+ *   3. once the whole logo has been on screen for a moment, two dark shapes start from the left and
+ *      right sides and grow toward the middle until the screen is black (the soft, arch-shaped edge
+ *      is drawn by a small WebGL fragment shader);
+ *   4. the black fades to transparent and the carbon-fibre site background is revealed.
  *
- * Here: the logo is split into BRO / MAS / LOG and each part slides in from ABOVE; the closing wave
- * comes down from the top and closes toward the bottom-middle; it then fades to transparent and the
- * carbon-fibre site background shows through.
- *
- * Timing: BRO, MAS, LOG enter 0.3s apart (~1.2s each); the complete logo is held ~0.7s; then the wave
- * covers the screen (~1.75s) and fades to transparent (~1.25s). A slow page load just extends the hold.
- * Everything is tunable in CONFIG (icomat itself runs ~2× faster than this).
+ * By default the dark fill comes from the TOP and the logo parts slide in from above (CONFIG.direction);
+ * set it to 'bottom' for the original orientation. All timings live in CONFIG. A slow page load simply
+ * extends step 2: the exit never starts before the page is ready.
  */
 (function () {
   'use strict';
 
   var CONFIG = {
-    // Slow, deliberate version (icomat itself runs 1.8 / 2): every duration below is divided by these.
-    logoSpeed: 1,            // timeScale of the logo parts: each part takes ~1.2s to come in
-    waveSpeed: 0.8,          // timeScale of the wave: ~1.75s to cover, ~1.25s to fade out
-    hold: 0.7,               // seconds the complete logo stays on screen before the exit starts
-    logoFadeDelay: 0.8,      // after the exit starts, the logo itself starts fading this late (s)
+    direction: 'top',        // 'top' = fill comes from the top, parts slide in from above · 'bottom' = the opposite
+    logoSpeed: 1.4,          // timeScale of the logo parts: each part takes ~0.9s to build
+    waveSpeed: 0.8,          // timeScale of the dark fill: ~1.5s to cover the screen, ~1.25s to fade out
+    hold: 0.5,               // seconds the complete logo stays on screen before the fill starts
+    partsExitDelay: 1.1,     // after the fill starts, the parts start leaving this late (s): the fill covers them first
     maxWaitMs: 6000,         // failsafe: never hold the visitor longer than this waiting for "ready"
     logo: {
       vbW: 327.13, vbH: 225.25,   // logo viewBox
       pad: 60,                    // canvas padding above/below the logo (units), must match CSS aspect-ratio
-      shift: 40,                  // how far a part travels while entering/leaving (icomat: 100 on 840 wide)
+      shift: 40,                  // how far a part slides while entering/leaving (units)
       start: 0.1,                 // delay before the first part
-      stagger: 0.3,               // seconds between BRO → MAS → LOG, on the way in and on the way out
-      ink: '25, 27, 29'           // #191B1D
+      stagger: 0.2,               // seconds between BRO → MAS → LOG, on the way in and on the way out
+      ink: '8, 8, 8'              // #080808
     },
-    wave: {
-      offsetFrom: -1.7, offsetTo: 2.5,   // icomat: -1.2 → 2.1 (here: starts fully transparent, ends fully opaque)
-      ampFrom: 1.3, ampTo: 0.3,
-      frequency: -0.5, scaleY: 1.3,
-      color: [25 / 255, 27 / 255, 29 / 255]
+    fill: {
+      levelFrom: -0.55, levelTo: 3.0,   // how far the dark has advanced (-0.55: a faint hint at the corners, 3.0: everything)
+      depthFrom: 1.3, depthTo: 0.3,     // how much later the middle is covered than the sides (arch depth)
+      rampIn: 0.2,                      // seconds to fade the first hint in, so it never "pops"
+      color: [8 / 255, 8 / 255, 8 / 255]
     }
   };
 
@@ -175,32 +176,31 @@
     return;
   }
 
-  /* ---------- closing wave: icomat's fragment shader, mirrored vertically ---------- */
+  /* ---------- the dark fill: soft arch-shaped edge, drawn by a fragment shader ---------- */
 
   var VERT = 'attribute vec2 aPos;varying vec2 vUv;void main(){vUv=aPos*0.5+0.5;gl_Position=vec4(aPos,0.0,1.0);}';
   var FRAG = [
     'precision highp float;',
     'varying vec2 vUv;',
-    'uniform float uAmplitude,uFrequency,uScaleY,uOffsetY,uOpacity;',
+    'uniform float uLevel,uDepth,uAlpha,uFromTop;',
     'uniform vec3 uColor;',
     'float hash(vec2 p){return fract(sin(dot(p,vec2(12.9898,78.233)))*43758.5453);}',
     'void main(){',
-    '  float y = 1.0 - vUv.y;',                                  // mirrored: the curtain comes from the top
-    '  float scaledY = 0.5 + (y - 0.5) * uScaleY;',
-    '  float wave = sin(vUv.x * uFrequency * 6.28318530718) * uAmplitude;',
-    '  float waveY = 0.5 + wave + uOffsetY;',
-    '  float dist = waveY - scaledY;',
-    '  float a = smoothstep(-1.0, 1.5, dist) * uOpacity;',
+    '  float y = mix(vUv.y, 1.0 - vUv.y, uFromTop);',              // 0 = the edge the fill starts from
+    '  float arch = sin(vUv.x * 3.14159265);',                      // 0 at the left/right sides, 1 in the middle
+    '  float h = uLevel - 1.3 * y - uDepth * arch;',                // the sides are covered first, the middle last
+    '  float a = smoothstep(-1.0, 1.5, h) * uAlpha;',               // very wide soft edge
     '  a = clamp(a + (hash(gl_FragCoord.xy) - 0.5) / 255.0 * step(0.002, a), 0.0, 1.0);',   // dither: no banding
-    '  gl_FragColor = vec4(uColor * a, a);',                     // premultiplied alpha
+    '  gl_FragColor = vec4(uColor * a, a);',                        // premultiplied alpha
     '}'
   ].join('\n');
 
+  var F = CONFIG.fill;
+  var FROM_TOP = CONFIG.direction === 'top';
   // Shared mutable state tweened by GSAP.
-  var wu = { offsetY: CONFIG.wave.offsetFrom, amp: CONFIG.wave.ampFrom, opacity: 1 };
+  var fill = { level: F.levelFrom, depth: F.depthFrom, alpha: 0 };
 
-  function createWave() {
-    var W = CONFIG.wave;
+  function createFill() {
     var canvas = document.createElement('canvas');
     canvas.id = 'pl-wave';
     canvas.setAttribute('aria-hidden', 'true');
@@ -228,12 +228,11 @@
         gl.enableVertexAttribArray(loc);
         gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
         var U = {};
-        ['uAmplitude', 'uFrequency', 'uScaleY', 'uOffsetY', 'uOpacity', 'uColor'].forEach(function (n) {
+        ['uLevel', 'uDepth', 'uAlpha', 'uFromTop', 'uColor'].forEach(function (n) {
           U[n] = gl.getUniformLocation(prog, n);
         });
-        gl.uniform1f(U.uFrequency, W.frequency);
-        gl.uniform1f(U.uScaleY, W.scaleY);
-        gl.uniform3f(U.uColor, W.color[0], W.color[1], W.color[2]);
+        gl.uniform1f(U.uFromTop, FROM_TOP ? 1 : 0);
+        gl.uniform3f(U.uColor, F.color[0], F.color[1], F.color[2]);
 
         // The edge is a very soft gradient, so half resolution is plenty (and cheap).
         var size = function () {
@@ -249,9 +248,9 @@
           render: function () {
             gl.clearColor(0, 0, 0, 0);
             gl.clear(gl.COLOR_BUFFER_BIT);
-            gl.uniform1f(U.uOffsetY, wu.offsetY);
-            gl.uniform1f(U.uAmplitude, wu.amp);
-            gl.uniform1f(U.uOpacity, wu.opacity);
+            gl.uniform1f(U.uLevel, fill.level);
+            gl.uniform1f(U.uDepth, fill.depth);
+            gl.uniform1f(U.uAlpha, fill.alpha);
             gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
           },
           destroy: function () {
@@ -264,7 +263,7 @@
     }
 
     if (!api) {
-      // No WebGL: a plain charcoal curtain sliding down, then fading — same timing, no soft edge.
+      // No WebGL: a plain black curtain sliding in from the same edge, then fading — same timing, no soft edge.
       canvas = document.createElement('div');
       canvas.id = 'pl-wave';
       canvas.className = 'is-fallback';
@@ -272,9 +271,10 @@
       api = {
         el: canvas,
         render: function () {
-          var p = Math.max(0, Math.min(1, (wu.offsetY - W.offsetFrom) / (W.offsetTo - W.offsetFrom)));
-          canvas.style.transform = 'translate3d(0,' + (-100 + 100 * p) + '%,0)';
-          canvas.style.opacity = wu.opacity;
+          var p = Math.max(0, Math.min(1, (fill.level - F.levelFrom) / (F.levelTo - F.levelFrom)));
+          var from = FROM_TOP ? -100 : 100;
+          canvas.style.transform = 'translate3d(0,' + (from - from * p) + '%,0)';
+          canvas.style.opacity = fill.alpha;
         },
         destroy: function () {}
       };
@@ -294,28 +294,29 @@
   /* ---------- the timeline ---------- */
 
   try {
-    waveApi = createWave();
+    waveApi = createFill();
   } catch (e) {
     finish();
     return;
   }
 
-  var W = CONFIG.wave;
   var LS = CONFIG.logoSpeed;
   var WS = CONFIG.waveSpeed;
-  var introEnd = [];   // when (s, on the intro timeline) each part has finished entering
+  var DIR = FROM_TOP ? 1 : -1;   // +1: parts travel downward, -1: upward
+  var introEnd = [];             // when (s, on the intro timeline) each part has finished entering
 
-  // ENTER — BRO, MAS, LOG slide in from above, each widening from its centre (icomat's arc cycle, flipped).
+  // 1–2. BRO, MAS, LOG appear one after another, each sliding in a little and widening from its centre.
   var intro = gsap.timeline({ onUpdate: drawLogo });
   parts.forEach(function (p, i) {
     var at = L.start + i * L.stagger;
-    intro.fromTo(p, { y: -L.shift }, { y: 0, duration: 1 / LS, ease: 'power1.out' }, at)
+    p.y = -DIR * L.shift;
+    intro.fromTo(p, { y: -DIR * L.shift }, { y: 0, duration: 1 / LS, ease: 'power1.out' }, at)
       .fromTo(p, { gl: 0.5, a: 0 }, { gl: 0, a: 1, duration: 1.2 / LS, ease: 'power2.out' }, at)
       .fromTo(p, { gr: 0.5 }, { gr: 1, duration: 1.2 / LS, ease: 'power2.out' }, at);
     introEnd.push(at + 1.2 / LS);
   });
 
-  // EXIT — logo leaves downward while the wave descends from the top and closes toward the middle.
+  // 3–4. The dark fill grows from the sides toward the middle, then fades out to reveal the site.
   function startExit() {
     if (finished) return;
     waveApi.el.style.visibility = 'visible';
@@ -324,19 +325,20 @@
 
     var ex = gsap.timeline({ onUpdate: drawLogo });
 
+    // The parts are covered by the fill; they only start leaving once it is about to reach the middle.
     parts.forEach(function (p, i) {
-      var at = i * L.stagger;                    // BRO leaves first, then MAS, then LOG
+      var at = CONFIG.partsExitDelay + i * L.stagger;
       ex.to(p, { gl: 0.5, gr: 0.5, a: 0, duration: 1.2 / LS, ease: 'power2.inOut' }, at)
-        .to(p, { y: L.shift, duration: 1.2 / LS, ease: 'power2.inOut' }, at);
+        .to(p, { y: DIR * L.shift, duration: 1.2 / LS, ease: 'power2.inOut' }, at);
     });
-    ex.to(logoCanvas, { opacity: 0, duration: 1.5, ease: 'power2.inOut' }, CONFIG.logoFadeDelay);
 
-    ex.to(wu, { offsetY: W.offsetTo, duration: 1.2 / WS, ease: 'power2.in' }, 0)
-      .to(wu, { amp: W.ampTo, duration: 1.4 / WS, ease: 'power2.in' }, 0)
-      .to(wu, {
-        opacity: 0, duration: 1 / WS, ease: 'power1.in',
+    ex.to(fill, { alpha: 1, duration: F.rampIn, ease: 'none' }, 0)
+      .to(fill, { level: F.levelTo, duration: 1.2 / WS, ease: 'power1.in' }, 0)
+      .to(fill, { depth: F.depthTo, duration: 1.4 / WS, ease: 'power1.in' }, 0)
+      .to(fill, {
+        alpha: 0, duration: 1 / WS, ease: 'power1.in',
         onStart: function () {
-          // Wave is now 100% opaque: drop the paper + logo underneath, then fade the wave out.
+          // The fill is now 100% opaque: drop the white + logo underneath, then fade the fill out.
           el.classList.add('is-hidden');
           window.dispatchEvent(new CustomEvent('preloader:reveal'));
         },

@@ -1,6 +1,6 @@
 :root {
-  --pl-paper: #F2F0EB;
-  --pl-ink: #191B1D;
+  --pl-paper: #F7F7F7;   /* the white screen (measured on the reference) */
+  --pl-ink: #080808;     /* logo + dark fill */
   --pl-logo-w: clamp(150px, 46vw, 260px);
 }
 
