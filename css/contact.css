@@ -89,26 +89,6 @@ html.is-contact-open { overflow: hidden; }
 .tc { opacity: 0; }
 .tc.on { opacity: 1; }
 
-.type-caret {
-  display: inline-block;
-  position: relative;
-  width: 0;
-  height: 1em;
-  vertical-align: -.14em;
-  pointer-events: none;
-}
-.type-caret::after {
-  content: "";
-  position: absolute;
-  left: 1px;
-  top: .04em;
-  bottom: .04em;
-  width: 1.5px;
-  background: currentColor;
-  animation: caret-blink .8s steps(1) infinite;
-}
-@keyframes caret-blink { 50% { opacity: 0; } }
-
 /* ---------- form ---------- */
 .contact-form { display: grid; gap: 10px; }
 .field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
@@ -213,6 +193,3 @@ html.is-contact-open { overflow: hidden; }
   .panel-lead { font-size: 15px; }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .type-caret::after { animation: none; }
-}

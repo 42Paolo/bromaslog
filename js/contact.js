@@ -5,8 +5,8 @@
  *    1. the three labels slide up out of the bar and disappear;
  *    2. at the same time the bar grows (a third of the page wide, almost the full page tall) while the page
  *       behind it is darkened and heavily blurred (the "scrim", brand and hero text included);
- *    3. the form frames, the contact details and their rules appear, then every text is "typed", in reading
- *       order, with a caret.
+ *    3. the form frames, the contact details and their rules appear, then the texts are "typed": all the texts of a
+ *       section (intro, form, details) are written together, and the three sections start almost at once.
  *
  *  Close (X button, Esc, click outside): the content fades, the bar shrinks back, the labels slide back in.
  *
@@ -29,7 +29,9 @@
     widthRatio: 1 / 3,                  // the panel is a third of the page wide...
     minWidth: 440, maxWidth: 720,       // ...but never narrower / wider than this (px)
     mobileBreakpoint: 640,              // at or below this page width the panel spans the whole width
-    typeSpeed: 0.65,                    // typing pace: lower = faster (1 = the base pace set in the markup, ~4.5s in all)
+    sectionDuration: 0.9,               // every section (intro, form, details) writes all its texts together in this time (s)...
+    maxPerChar: 0.05,                   // ...but a short text never types slower than this (s per character)
+    sectionStagger: 0.14,               // the sections start almost together: this much after one another (s)
     panelBg: 'rgba(11, 12, 14, 0.94)',  // bar colour once it has become the panel
     barBg: 'rgba(14, 15, 17, 0.84)'     // must match .glass-nav in css/site.css
   };
@@ -84,44 +86,42 @@
 
     el.appendChild(sr);
     el.appendChild(vis);
-    return {
-      chars: chars,
-      speed: parseFloat(el.getAttribute('data-speed')) || 0.012,  // seconds per character
-      gap: parseFloat(el.getAttribute('data-gap')) || 0.03        // pause before the element starts
-    };
+    return { chars: chars, group: el.getAttribute('data-group') || '' };
   }
 
   var segments = [];
   var typingTotal = 0;
   (function schedule() {
     var items = gsap.utils.toArray(panel.querySelectorAll('[data-type]')).map(prepare);
-    var cursor = 0;
+    var order = [];                                   // section names, in order of first appearance
+    items.forEach(function (it) { if (order.indexOf(it.group) < 0) order.push(it.group); });
     var seed = 7;
     function rnd() { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; }   // repeatable "human" jitter
+
     items.forEach(function (item) {
-      var start = cursor + item.gap;
-      var acc = 0;
-      var times = [];
-      item.chars.forEach(function (c) {
-        var d = item.speed * CFG.typeSpeed * (0.6 + 0.9 * rnd());
-        if (c.hasAttribute('data-ws')) d *= 1.8;
-        acc += d;
-        times.push(start + acc);                                   // the moment this character appears
-        if (/[.,;:!?]/.test(c.textContent)) acc += 0.09 * CFG.typeSpeed;
+      var start = order.indexOf(item.group) * CFG.sectionStagger;
+      var n = item.chars.length;
+      var duration = Math.min(CFG.sectionDuration, n * CFG.maxPerChar);
+      // Irregular rhythm: every character gets a random weight (a little longer at word starts and after punctuation),
+      // and the weights are scaled so that the whole text is finished exactly after `duration`.
+      var carry = 0;
+      var weights = item.chars.map(function (c) {
+        var w = 0.6 + 0.9 * rnd();
+        if (c.hasAttribute('data-ws')) w *= 1.8;
+        w += carry;
+        carry = /[.,;:!?]/.test(c.textContent) ? 1.5 : 0;   // a pause after punctuation: the next character comes later
+        return w;
       });
-      segments.push({ chars: item.chars, times: times, start: start, end: start + acc, shown: 0 });
-      cursor = start + acc;
+      var total = 0;
+      var times = weights.map(function (w) { total += w; return total; });
+      times = times.map(function (t) { return start + duration * t / total; });
+      segments.push({ chars: item.chars, times: times, shown: 0 });
+      typingTotal = Math.max(typingTotal, start + duration);
     });
-    typingTotal = cursor;
   })();
 
-  var caret = document.createElement('span');
-  caret.className = 'type-caret';
-  caret.setAttribute('aria-hidden', 'true');
-
-  // Show exactly the characters whose time has come (works forwards and backwards), caret after the last one.
+  // Show exactly the characters whose time has come.
   function renderTyping(t) {
-    var active = null;
     for (var i = 0; i < segments.length; i++) {
       var s = segments[i];
       var k = s.shown;
@@ -133,13 +133,6 @@
         for (var j = lo; j < hi; j++) s.chars[j].classList.toggle('on', j < k);
         s.shown = k;
       }
-      if (t >= s.start && t < s.end + 0.12) active = s;
-    }
-    if (active && t < typingTotal) {
-      if (active.shown > 0) active.chars[active.shown - 1].after(caret);
-      else active.chars[0].before(caret);
-    } else if (caret.parentNode) {
-      caret.remove();
     }
   }
 
@@ -148,7 +141,6 @@
       s.shown = 0;
       s.chars.forEach(function (c) { c.classList.remove('on'); });
     });
-    caret.remove();
   }
 
   function showAllText() {
@@ -156,7 +148,6 @@
       s.shown = s.times.length;
       s.chars.forEach(function (c) { c.classList.add('on'); });
     });
-    caret.remove();
   }
 
   function typingTween() {
@@ -374,20 +365,36 @@
     gsap.fromTo(status, { autoAlpha: 0, y: 6 }, { autoAlpha: 1, y: 0, duration: 0.4, ease: 'power2.out', clearProps: 'transform' });
   }
 
+  var SUBJECT = 'Nuova richiesta dal sito Bromaslog';
+
   form.addEventListener('submit', function (e) {
     e.preventDefault();                                           // (native validation has already passed)
     if (form.elements.website && form.elements.website.value) return;   // honeypot: only bots fill it in
 
     var data = new FormData(form);
-    var endpoint = form.getAttribute('data-endpoint');
+    data.delete('website');                                       // the honeypot is not part of the message
+    var accessKey = form.getAttribute('data-access-key');         // Web3Forms
+    var endpoint = form.getAttribute('data-endpoint') || (accessKey ? 'https://api.web3forms.com/submit' : '');
     var mailto = form.getAttribute('data-mailto');
     setStatus('Invio in corso…');
     sendBtn.disabled = true;
 
     if (endpoint) {
+      if (accessKey) {
+        data.append('access_key', accessKey);
+        data.append('subject', SUBJECT);
+        data.append('from_name', 'Sito Bromaslog');
+      } else if (/formspree\.io/.test(endpoint)) {
+        data.append('_subject', SUBJECT);                         // Formspree's name for the email subject
+      }
       fetch(endpoint, { method: 'POST', body: data, headers: { Accept: 'application/json' } })
         .then(function (res) {
-          if (!res.ok) throw new Error(String(res.status));
+          return res.json().catch(function () { return {}; }).then(function (body) {
+            // Web3Forms answers { success }, Formspree { ok }: either one can say "no" even with a 2xx status.
+            if (!res.ok || body.success === false || body.ok === false) throw new Error(body.message || String(res.status));
+          });
+        })
+        .then(function () {
           form.reset();
           setStatus('Grazie! Abbiamo ricevuto la tua richiesta: ti ricontatteremo al più presto.', 'ok');
         })
@@ -408,7 +415,7 @@
       data.get('message') || ''
     ];
     window.location.href = 'mailto:' + mailto +
-      '?subject=' + encodeURIComponent('Richiesta dal sito – ' + (data.get('name') || '')) +
+      '?subject=' + encodeURIComponent(SUBJECT) +
       '&body=' + encodeURIComponent(lines.join('\n'));
     setStatus('Si apre la tua app di posta: premi invia per completare la richiesta.', 'ok');
     sendBtn.disabled = false;
