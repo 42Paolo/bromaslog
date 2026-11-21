@@ -10,23 +10,22 @@
   <script>document.documentElement.classList.add('is-loading');</script>
   <noscript><style>#preloader{display:none!important}html{overflow:auto!important}</style></noscript>
 
-  <link rel="preload" as="image" href="assets/fabric-poster-960.webp" type="image/webp" media="(max-width: 767px)" fetchpriority="high">
-  <link rel="preload" as="image" href="assets/fabric-poster.webp" type="image/webp" media="(min-width: 768px)" fetchpriority="high">
+  <link rel="preload" as="image" href="assets/bg-poster-960.webp" type="image/webp" media="(max-width: 767px)" fetchpriority="high">
+  <link rel="preload" as="image" href="assets/bg-poster.webp" type="image/webp" media="(min-width: 768px)" fetchpriority="high">
   <link rel="stylesheet" href="css/preloader.css">
   <link rel="stylesheet" href="css/site.css">
 </head>
 <body>
 
-  <!-- Carbon-fibre background of the site: revealed when the preloader wave fades out. -->
+  <!-- Background of the site: a still frame first (instant), the looping GIF fades in over it once it has loaded. -->
   <div id="site-bg" aria-hidden="true">
     <picture>
-      <source media="(max-width: 767px)" srcset="assets/fabric-poster-960.webp" type="image/webp">
-      <img class="bg-poster" src="assets/fabric-poster.webp" alt="" width="1672" height="941"
+      <source media="(max-width: 767px)" srcset="assets/bg-poster-960.webp" type="image/webp">
+      <img class="bg-poster" src="assets/bg-poster.webp" alt="" width="1280" height="720"
            fetchpriority="high" decoding="async" draggable="false">
     </picture>
-    <!-- Optional. Sources are attached lazily after the preloader; if the files are missing the poster stays. -->
-    <video class="bg-video" muted loop playsinline preload="none" disablepictureinpicture
-           data-src-webm="assets/fabric.webm" data-src-mp4="assets/fabric.mp4"></video>
+    <!-- No src on purpose: js/preloader.js loads it after the page is ready (and skips it for reduced motion / data saver). -->
+    <img class="bg-gif" alt="" width="640" height="360" data-src="assets/king-loop.gif" decoding="async" draggable="false">
   </div>
 
   <!-- Preloader: off-white paper + the logo drawn part by part on a canvas (BRO / MAS / LOG).

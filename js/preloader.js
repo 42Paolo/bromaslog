@@ -66,38 +66,25 @@
   var finished = false;
   var waveApi = null;
 
-  /* ---------- background video (optional, never blocks) ---------- */
+  /* ---------- background GIF (loaded after the page is ready, never blocks anything) ---------- */
 
-  function initBackgroundVideo() {
-    var video = document.querySelector('.bg-video');
-    if (!video) return;
+  function initBackgroundGif() {
+    var img = document.querySelector('.bg-gif');
+    if (!img) return;
     var conn = navigator.connection;
-    function drop() { if (video.parentNode) video.parentNode.removeChild(video); }
-    if (conn && (conn.saveData || /(^|-)2g$/.test(conn.effectiveType || ''))) { drop(); return; }
+    // The still poster stays for reduced motion, data saver and slow connections.
+    if (reduced || (conn && (conn.saveData || /(^|-)2g$/.test(conn.effectiveType || '')))) { img.remove(); return; }
 
-    function attach(type, src) {
-      if (!src || !video.canPlayType(type)) return;
-      var s = document.createElement('source');
-      s.src = src;
-      s.type = type;
-      s.addEventListener('error', function () {
-        if (video.networkState === HTMLMediaElement.NETWORK_NO_SOURCE) drop();
+    var src = img.getAttribute('data-src');
+    var pre = new Image();
+    pre.onload = function () {
+      (pre.decode ? pre.decode() : Promise.resolve()).catch(function () {}).then(function () {
+        img.src = src;                 // already cached: starts playing from its first frame
+        img.classList.add('is-on');    // fades in over the poster, which is the same frame
       });
-      video.appendChild(s);
-    }
-    attach('video/webm; codecs="vp9"', video.dataset.srcWebm);
-    attach('video/mp4', video.dataset.srcMp4);
-    if (!video.firstChild) { drop(); return; }
-
-    video.addEventListener('error', drop, { once: true });
-    video.addEventListener('loadeddata', function () {
-      // The video starts on its first frame, which is the poster frame, so the crossfade is seamless.
-      var p = video.play();
-      if (p && p.then) p.then(function () { video.classList.add('is-on'); }, drop);
-      else video.classList.add('is-on');
-    }, { once: true });
-    video.preload = 'auto';
-    video.load();
+    };
+    pre.onerror = function () { img.remove(); };   // missing file: the poster simply stays
+    pre.src = src;
   }
 
   function finish() {
@@ -109,11 +96,10 @@
     root.classList.add('no-preloader');
     if (site) site.removeAttribute('inert');
     window.dispatchEvent(new CustomEvent('preloader:complete'));
-    initBackgroundVideo();
   }
 
   // Without GSAP we must never trap the visitor behind the preloader.
-  if (!window.gsap) { finish(); return; }
+  if (!window.gsap) { finish(); initBackgroundGif(); return; }
 
   if (site) site.setAttribute('inert', '');
 
@@ -131,6 +117,8 @@
     ]),
     new Promise(function (resolve) { setTimeout(resolve, CONFIG.maxWaitMs); })
   ]);
+
+  pageReady.then(initBackgroundGif);   // fetch the GIF during the animation: usually in place by the reveal
 
   /* ---------- logo: three parts drawn on a 2D canvas (like icomat's arcs) ---------- */
 

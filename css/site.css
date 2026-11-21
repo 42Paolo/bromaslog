@@ -14,7 +14,7 @@ body {
 /* Carbon-fibre background */
 #site-bg { position: fixed; inset: 0; z-index: 0; overflow: hidden; background: #191B1D; }
 #site-bg picture { display: block; position: absolute; inset: 0; }
-.bg-poster, .bg-video {
+.bg-poster, .bg-gif {
   position: absolute;
   inset: 0;
   width: 100%;
@@ -23,8 +23,8 @@ body {
   user-select: none;
   -webkit-user-drag: none;
 }
-.bg-video { opacity: 0; pointer-events: none; transition: opacity .8s ease; }
-.bg-video.is-on { opacity: 1; }
+.bg-gif { opacity: 0; pointer-events: none; transition: opacity .8s ease; }
+.bg-gif.is-on { opacity: 1; }
 
 #site { position: relative; z-index: 1; }
 
