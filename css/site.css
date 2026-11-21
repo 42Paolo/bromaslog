@@ -105,6 +105,7 @@ body {
   transition: opacity .2s ease, background-color .2s ease;
 }
 .glass-nav a:hover,
+.glass-nav a.is-cta,                    /* the highlighted item (Contact) */
 .glass-nav a[aria-current="page"] { opacity: 1; background-color: rgba(255, 255, 255, .12); }
 .glass-nav a:focus-visible { opacity: 1; outline: 2px solid var(--paper); outline-offset: -2px; }
 
@@ -117,7 +118,7 @@ body {
 @media (max-width: 600px) {
   .site-brand { font-size: 12px; }
   .glass-nav { gap: 2px; }
-  .glass-nav a { padding: 8px 12px; font-size: 10px; letter-spacing: .06em; }
+  .glass-nav a { padding: 8px 9px; font-size: 10px; letter-spacing: .05em; }
 }
 
 .site-hero {
