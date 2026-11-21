@@ -220,14 +220,14 @@ html.is-switching-lang .nav-links a { transition: none; }
 .site-tagline { width: max-content; max-width: 42vw; pointer-events: auto; }
 .site-tagline .ln { display: block; }
 .site-claim {
-  margin: 0 0 calc(20 * var(--vr));
+  margin: 0;                                   /* the two texts are one block: no gap between them */
   font: 500 calc(18 * var(--vr)) / 1.12 var(--font-sans);          /* icomat: 18 */
   letter-spacing: -.01em;
   color: #fff;
 }
 .site-sub {
   margin: 0;
-  font: 400 calc(18 * var(--vr)) / 1.35 var(--font-sans);          /* icomat: 18 */
+  font: 400 calc(18 * var(--vr)) / 1.12 var(--font-sans);          /* same leading as the claim: the lines keep one rhythm */          /* icomat: 18 */
   color: rgba(255, 255, 255, .62);
 }
 
