@@ -27,7 +27,7 @@
 
   var CFG = {
     widthRatio: 1 / 3,                  // the panel is a third of the page wide...
-    minWidth: 440, maxWidth: 720,       // ...but never narrower / wider than this (px)
+    minWidth: 440, maxWidth: 720,       // ...but never narrower / wider than this (design px: scaled by --vr like everything else)
     mobileBreakpoint: 640,              // at or below this page width the panel spans the whole width
     sectionDuration: 0.9,               // every section (intro, form, details) writes all its texts together in this time (s)...
     maxPerChar: 0.05,                   // ...but a short text never types slower than this (s per character)
@@ -181,10 +181,11 @@
     var right = parseFloat(cs.right) || 0;
     var vw = window.innerWidth;
     var vh = window.innerHeight;
+    var u = parseFloat(getComputedStyle(root).fontSize) / 16;      // 1 design px = u real px (the site's --vr)
     var maxW = vw - 2 * right;
     var w = vw <= CFG.mobileBreakpoint
       ? maxW
-      : Math.min(Math.max(vw * CFG.widthRatio, CFG.minWidth), CFG.maxWidth, maxW);
+      : Math.min(Math.max(vw * CFG.widthRatio, CFG.minWidth * u), CFG.maxWidth * u, maxW);
     return { w: Math.round(w), h: Math.round(vh - 2 * top) };
   }
 

@@ -36,7 +36,7 @@ html.is-contact-open { overflow: hidden; }
   right: 0;
   width: var(--panel-w, 480px);     /* final size, set by JS: the bar simply reveals it as it grows */
   height: var(--panel-h, 100%);
-  padding: 24px 28px 22px;
+  padding: calc(24 * var(--vr)) calc(28 * var(--vr)) calc(22 * var(--vr));
   overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior: contain;
@@ -50,36 +50,36 @@ html.is-contact-open { overflow: hidden; }
 
 .panel-close {
   position: absolute;
-  top: 16px;
-  right: 16px;
+  top: calc(16 * var(--vr));
+  right: calc(16 * var(--vr));
   z-index: 2;
   display: grid;
   place-items: center;
-  width: 40px;
-  height: 40px;
+  width: calc(40 * var(--vr));
+  height: calc(40 * var(--vr));
   padding: 0;
   color: var(--paper);
   background: rgba(255, 255, 255, .05);
   border: 1px solid rgba(255, 255, 255, .14);
-  border-radius: 8px;
+  border-radius: calc(8 * var(--vr));
   cursor: pointer;
   transition: background-color .2s ease, border-color .2s ease;
 }
-.panel-close svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; transition: transform .35s cubic-bezier(.2, .7, .2, 1); }
+.panel-close svg { width: calc(16 * var(--vr)); height: calc(16 * var(--vr)); fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; transition: transform .35s cubic-bezier(.2, .7, .2, 1); }
 .panel-close:hover { background: rgba(255, 255, 255, .1); border-color: rgba(255, 255, 255, .28); }
 .panel-close:hover svg { transform: rotate(90deg); }
 .panel-close:focus-visible, .btn-send:focus-visible, .contact-list a:focus-visible { outline: 2px solid var(--paper); outline-offset: 2px; }
 
 .panel-title {
-  margin: 0 56px 12px 0;
-  font: 500 clamp(34px, 2.9vw, 46px) / 1.02 var(--font-sans);
+  margin: 0 calc(56 * var(--vr)) calc(12 * var(--vr)) 0;
+  font: 500 calc(42 * var(--vr)) / 1.02 var(--font-sans);
   letter-spacing: -.02em;
 }
 
 .panel-lead {
   max-width: 36ch;
-  margin: 0 0 18px;
-  font: 400 16px / 1.45 var(--font-sans);
+  margin: 0 0 calc(18 * var(--vr));
+  font: 400 calc(16 * var(--vr)) / 1.45 var(--font-sans);
   color: rgba(242, 240, 235, .78);
 }
 
@@ -90,25 +90,25 @@ html.is-contact-open { overflow: hidden; }
 .tc.on { opacity: 1; }
 
 /* ---------- form ---------- */
-.contact-form { display: grid; gap: 10px; }
-.field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.contact-form { display: grid; gap: calc(10 * var(--vr)); }
+.field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: calc(10 * var(--vr)); }
 
 .field { position: relative; }
 .field input,
 .field textarea {
   display: block;
   width: 100%;
-  height: 52px;
-  padding: 22px 16px 8px;
-  font: 400 15px / 1.2 var(--font-sans);
+  height: calc(52 * var(--vr));
+  padding: calc(22 * var(--vr)) calc(16 * var(--vr)) calc(8 * var(--vr));
+  font: 400 calc(15 * var(--vr)) / 1.2 var(--font-sans);
   color: #fff;
   background: rgba(255, 255, 255, .035);
   border: 1px solid rgba(255, 255, 255, .14);
-  border-radius: 6px;
+  border-radius: calc(6 * var(--vr));
   outline: none;
   transition: border-color .2s ease, background-color .2s ease;
 }
-.field textarea { height: 100px; padding-top: 28px; resize: none; }
+.field textarea { height: calc(100 * var(--vr)); padding-top: calc(28 * var(--vr)); resize: none; }
 .field input:focus,
 .field textarea:focus { border-color: rgba(255, 255, 255, .42); background: rgba(255, 255, 255, .06); }
 .field input:user-invalid,
@@ -117,19 +117,19 @@ html.is-contact-open { overflow: hidden; }
 /* The label sits where a placeholder would and floats up when the field is focused or filled. */
 .field label {
   position: absolute;
-  left: 16px;
-  top: 19px;
-  font: 400 14px / 1 var(--font-sans);
+  left: calc(16 * var(--vr));
+  top: calc(19 * var(--vr));
+  font: 400 calc(14 * var(--vr)) / 1 var(--font-sans);
   color: rgba(255, 255, 255, .62);
   pointer-events: none;
   transform-origin: left top;
   transition: transform .25s cubic-bezier(.2, .7, .2, 1), color .2s ease;
 }
-.field--area label { top: 19px; }
+.field--area label { top: calc(19 * var(--vr)); }
 .field input:focus + label,
 .field input:not(:placeholder-shown) + label,
 .field textarea:focus + label,
-.field textarea:not(:placeholder-shown) + label { transform: translateY(-12px) scale(.78); color: rgba(255, 255, 255, .8); }
+.field textarea:not(:placeholder-shown) + label { transform: translateY(calc(-12 * var(--vr))) scale(.78); color: rgba(255, 255, 255, .8); }
 
 .hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
 
@@ -137,59 +137,62 @@ html.is-contact-open { overflow: hidden; }
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  gap: calc(10 * var(--vr));
   width: 100%;
-  height: 48px;
+  height: calc(48 * var(--vr));
   padding: 0;
-  font: 500 15px / 1 var(--font-sans);
+  font: 500 calc(15 * var(--vr)) / 1 var(--font-sans);
   color: #141517;
   background: var(--paper);
   border: 0;
-  border-radius: 6px;
+  border-radius: calc(6 * var(--vr));
   cursor: pointer;
   transition: background-color .2s ease;
 }
 .btn-send:hover { background: #fff; }
 .btn-send:disabled { opacity: .6; cursor: progress; }
-.btn-send svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; transition: transform .25s ease; }
+.btn-send svg { width: calc(16 * var(--vr)); height: calc(16 * var(--vr)); fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; transition: transform .25s ease; }
 .btn-send:hover svg { transform: translateX(4px); }
 
-.form-status { min-height: 1.4em; margin: 0; font: 400 13px / 1.4 var(--font-sans); color: rgba(242, 240, 235, .75); }
+.form-status { min-height: 1.4em; margin: 0; font: 400 calc(13 * var(--vr)) / 1.4 var(--font-sans); color: rgba(242, 240, 235, .75); }
 .form-status[data-state="ok"] { color: #b8e0c2; }
 .form-status[data-state="error"] { color: #ffb3a3; }
 
 /* ---------- contact details ---------- */
-.panel-rule { height: 1px; margin: 16px 0 4px; border: 0; background: rgba(255, 255, 255, .14); transform-origin: left center; }
+.panel-rule { height: 1px; margin: calc(16 * var(--vr)) 0 calc(4 * var(--vr)); border: 0; background: rgba(255, 255, 255, .14); transform-origin: left center; }
 
 .contact-list { margin: 0; padding: 0; list-style: none; }
 .contact-list li {
   position: relative;
   display: grid;
-  grid-template-columns: 40px 1fr;
-  gap: 16px;
+  grid-template-columns: calc(40 * var(--vr)) 1fr;
+  gap: calc(16 * var(--vr));
   align-items: center;
-  padding: 9px 0;
+  padding: calc(9 * var(--vr)) 0;
 }
 .contact-list .rule { position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: rgba(255, 255, 255, .12); transform-origin: left center; }
 .contact-list .ic {
   display: grid;
   place-items: center;
-  width: 40px;
-  height: 40px;
+  width: calc(40 * var(--vr));
+  height: calc(40 * var(--vr));
   color: var(--paper);
   border: 1px solid rgba(255, 255, 255, .16);
-  border-radius: 8px;
+  border-radius: calc(8 * var(--vr));
   background: rgba(255, 255, 255, .03);
 }
-.contact-list .ic svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
-.contact-list .txt { display: grid; gap: 4px; min-width: 0; }
-.contact-list .k { font: 400 10px / 1 var(--font-mono); letter-spacing: .14em; text-transform: uppercase; color: rgba(242, 240, 235, .55); }
-.contact-list .v { font: 400 16px / 1.3 var(--font-sans); color: var(--paper); }
+.contact-list .ic svg { width: calc(19 * var(--vr)); height: calc(19 * var(--vr)); fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+.contact-list .txt { display: grid; gap: calc(4 * var(--vr)); min-width: 0; }
+.contact-list .k { font: 400 calc(10 * var(--vr)) / 1 var(--font-mono); letter-spacing: .14em; text-transform: uppercase; color: rgba(242, 240, 235, .55); }
+.contact-list .v { font: 400 calc(16 * var(--vr)) / 1.3 var(--font-sans); color: var(--paper); }
 .contact-list a.v:hover { text-decoration: underline; text-underline-offset: 3px; }
 
+@media (max-width: 767px) {
+  .nav-panel { padding: calc(22 * var(--vr)) calc(20 * var(--vr)) calc(24 * var(--vr)); }
+  .panel-title { font-size: calc(34 * var(--vr)); }
+  .panel-lead { font-size: calc(15 * var(--vr)); }
+}
 @media (max-width: 560px) {
-  .nav-panel { padding: 22px 20px 24px; }
   .field-grid { grid-template-columns: 1fr; }
-  .panel-lead { font-size: 15px; }
 }
 

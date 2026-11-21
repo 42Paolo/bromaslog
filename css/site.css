@@ -22,13 +22,37 @@
   --font-sans: "Helvetica Neue", Helvetica, Arial, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   --paper: #F2F0EB;
-  --nav-radius: 10px;      /* corner radius of the glass bar (fixed px so the corners stay visibly round at any width) */
-  --pad-x: clamp(16px, 4vw, 56px);   /* distance of the bar / brand from the page edges */
-  --pad-y: clamp(14px, 2.2vw, 28px);
-  --bar-h: 55px;                     /* height of the closed bar: 2*(3px padding + 1px border) + 47px of label */
 }
 
-html { background: #191B1D; }
+/* ---------- fluid sizing (the same idea as icomat.co.uk) ----------
+   Every size on the site is written as  calc(N * var(--vr))  where N is the size in px at the DESIGN size:
+   1440 x 933 on desktop, 393 x 812 on phones (switch at 768px). --vr is 1px at the design size and follows the
+   window only half as fast (--vw-ratio / --vh-ratio = .5), averaging width and height. So type and spacing re-scale
+   continuously with the window, with no jumps: at 1920 x 1080 everything is ~12% bigger (not 33%), at 1024 x 768
+   about 12% smaller. */
+:root {
+  --size-width: 1440;
+  --size-height: 933;
+  --vw-ratio: .5;
+  --vh-ratio: .5;
+  --vr: calc((100vw / var(--size-width) * 16 * var(--vw-ratio) + (1 - var(--vw-ratio)) * 16px + 100vh / var(--size-height) * 16 * var(--vh-ratio) + (1 - var(--vh-ratio)) * 16px) / 2 / 16);
+
+  --nav-radius: calc(10 * var(--vr));   /* corner radius of the glass bar */
+  --pad-x: calc(56 * var(--vr));        /* distance of the bar / brand from the page edges */
+  --pad-y: calc(28 * var(--vr));
+  --bar-h: calc(53 * var(--vr) + 2px);  /* closed bar: 2 x 3 padding + 47 of label (+ 2px of border) */
+}
+@media (max-width: 767px) {
+  :root {
+    --size-width: 393;
+    --size-height: 812;
+    --pad-x: calc(16 * var(--vr));
+    --pad-y: calc(14 * var(--vr));
+    --bar-h: calc(50 * var(--vr) + 2px);   /* 2 x 3 padding + 44 of label */
+  }
+}
+
+html { font-size: calc(16 * var(--vr)); background: #191B1D; }
 
 body {
   margin: 0;
@@ -78,7 +102,7 @@ body {
   position: relative;
   z-index: 0;
   font-weight: 500;
-  font-size: 14px;
+  font-size: calc(14 * var(--vr));
   letter-spacing: .1em;
   text-transform: uppercase;
 }
@@ -89,7 +113,7 @@ body {
   right: var(--pad-x);
   z-index: 2;
   overflow: hidden;                /* clips the labels sliding out and the panel while it grows */
-  padding: 3px;
+  padding: calc(3 * var(--vr));
   border-radius: var(--nav-radius);
   color: #fff;
   /* Mostly opaque dark bar: just a hint of the page showing through and a light blur. */
@@ -105,20 +129,20 @@ body {
 .nav-links {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: calc(6 * var(--vr));
 }
 /* While the bar is growing, the labels stay pinned to the bar's top-right corner. */
-.glass-nav.is-expanding .nav-links { position: absolute; top: 3px; right: 3px; }
+.glass-nav.is-expanding .nav-links { position: absolute; top: calc(3 * var(--vr)); right: calc(3 * var(--vr)); }
 
 .nav-links a {
   font-family: var(--font-mono);
   font-weight: 400;
-  font-size: 11px;
+  font-size: calc(11 * var(--vr));
   line-height: 1;
   letter-spacing: .1em;
   text-transform: uppercase;
-  padding: 18px 34px;
-  border-radius: calc(var(--nav-radius) - 3px);
+  padding: calc(18 * var(--vr)) calc(34 * var(--vr));
+  border-radius: calc(var(--nav-radius) - 3 * var(--vr));
   opacity: .95;                      /* nearly full white (was .83) */
   transition: opacity .2s ease, background-color .2s ease;
 }
@@ -132,11 +156,10 @@ body {
   .glass-nav { background: rgba(10, 11, 13, .95); }
 }
 
-@media (max-width: 600px) {
-  :root { --bar-h: 52px; }
-  .site-brand { font-size: 12px; }
-  .nav-links { gap: 2px; }
-  .nav-links a { padding: 17px 9px; font-size: 10px; letter-spacing: .05em; }
+@media (max-width: 767px) {
+  .site-brand { font-size: calc(12 * var(--vr)); }
+  .nav-links { gap: calc(2 * var(--vr)); }
+  .nav-links a { padding: calc(17 * var(--vr)) calc(9 * var(--vr)); font-size: calc(10 * var(--vr)); letter-spacing: .05em; }
 }
 
 .site-hero {
@@ -145,7 +168,7 @@ body {
   flex-direction: column;
   justify-content: flex-end;
   /* headline + label sit close to the bottom-left corner */
-  padding: 0 clamp(16px, 2.8vw, 40px) clamp(24px, 4.5vh, 48px);
+  padding: 0 calc(40 * var(--vr)) calc(36 * var(--vr));
 }
 
 /* Claim on the right: its centre is at 53% of the page height (the wrapper spans from 6% down to the bottom). */
@@ -162,30 +185,37 @@ body {
 .site-tagline { width: max-content; max-width: 42vw; pointer-events: auto; }
 .site-tagline .ln { display: block; }
 .site-claim {
-  margin: 0 0 20px;
-  font: 500 clamp(18px, 1.5vw, 28px) / 1.12 var(--font-sans);
+  margin: 0 0 calc(20 * var(--vr));
+  font: 500 calc(22 * var(--vr)) / 1.12 var(--font-sans);
   letter-spacing: -.01em;
   color: #fff;
 }
 .site-sub {
   margin: 0;
-  font: 400 clamp(14px, 1.15vw, 20px) / 1.35 var(--font-sans);
+  font: 400 calc(17 * var(--vr)) / 1.35 var(--font-sans);
   color: rgba(255, 255, 255, .62);
 }
 
 /* On narrow screens the claim joins the left-hand stack, below the label and the headline (the last item, at the bottom). */
-@media (max-width: 800px) {
-  .site-tagline-wrap { position: static; display: block; order: 3; margin: 28px 0 0; }
+@media (max-width: 767px) {
+  .site-hero { padding: 0 calc(16 * var(--vr)) calc(36 * var(--vr)); }
+  .site-tagline-wrap { position: static; display: block; order: 3; margin: calc(28 * var(--vr)) 0 0; }
   .site-tagline { width: auto; max-width: 34ch; }
   .site-tagline .ln { display: inline; }
+  .site-claim { font-size: calc(19 * var(--vr)); }
+  .site-sub { font-size: calc(15 * var(--vr)); }
 }
 
-.site-eyebrow { margin: 0 0 16px; font-family: var(--font-mono); font-size: 12px; letter-spacing: .14em; text-transform: uppercase; opacity: .6; }
+.site-eyebrow { margin: 0 0 calc(16 * var(--vr)); font-family: var(--font-mono); font-size: calc(12 * var(--vr)); letter-spacing: .14em; text-transform: uppercase; opacity: .6; }
 
 .site-hero h1 {
   margin: 0;
   font-weight: 500;
-  font-size: clamp(44px, 9vw, 150px);
+  font-size: calc(130 * var(--vr));
   line-height: .95;
   letter-spacing: -.03em;
+}
+
+@media (max-width: 767px) {
+  .site-hero h1 { font-size: calc(45 * var(--vr)); }
 }
