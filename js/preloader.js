@@ -14,7 +14,8 @@
   'use strict';
 
   var CONFIG = {
-    maxWaitMs: 6000,        // failsafe: never hold the visitor longer than this for "ready"
+    hold: true,             // REVIEW MODE: keep the preloader on screen forever (never slide up). Set false to go live.
+    maxWaitMs: 6000,       // failsafe: never hold the visitor longer than this for "ready"
     posterGateMs: 1500,     // max time to wait for the poster to decode before lifting the veil
     maskEndX: -300,         // sweep rect x when the logo is fully revealed (see #pl-sweep in index.html)
     t: { logoIn: 0.4, logoDur: 0.9, fabricIn: 1.2, fabricDur: 0.9, material: 2.1, exit: 2.8, exitDur: 0.7 }
@@ -74,6 +75,7 @@
   if (reduced) {
     gsap.set(sweep, { attr: { x: CONFIG.maskEndX } });
     gsap.set(overlay, { opacity: 0 });
+    if (CONFIG.hold) return;
     pageReady.then(function () {
       gsap.to(el, { opacity: 0, duration: 0.4, ease: 'none', onComplete: finish });
     });
@@ -157,7 +159,7 @@
     .add(function () { wantVideo = true; showVideo(); }, T.material)
 
     // Phase 5 — hold until the homepage is ready, then slide the whole preloader up
-    .addPause(T.exit, function () { pageReady.then(function () { tl.resume(); }); })
+    .addPause(T.exit, function () { if (!CONFIG.hold) pageReady.then(function () { tl.resume(); }); })
     .to(el, { yPercent: -100, duration: T.exitDur, ease: 'power3.inOut' }, T.exit)
     .add(function () { drift.kill(); finish(); });
 })();
