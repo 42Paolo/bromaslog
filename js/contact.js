@@ -33,7 +33,7 @@
     maxPerChar: 0.05,                   // ...but a short text never types slower than this (s per character)
     sectionStagger: 0.14,               // the sections start almost together: this much after one another (s)
     panelBg: 'rgba(11, 12, 14, 0.94)',  // bar colour once it has become the panel
-    barBg: 'rgba(14, 15, 17, 0.84)'     // must match .glass-nav in css/site.css
+    barBg: 'rgba(10, 11, 13, 0.90)'     // must match .glass-nav in css/site.css
   };
 
   var root = document.documentElement;
