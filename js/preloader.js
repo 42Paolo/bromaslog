@@ -23,6 +23,7 @@
     waveSpeed: 0.8,          // timeScale of the dark fill: ~1.5s to cover the screen, ~1.25s to fade out
     hold: 0.5,               // seconds the complete logo stays on screen before the fill starts
     partsExitDelay: 1.1,     // after the fill starts, the parts start leaving this late (s): the fill covers them first
+    respectReducedMotion: true,   // false = always play the full animation, even if the visitor's system asks for less motion
     maxWaitMs: 6000,         // failsafe: never hold the visitor longer than this waiting for "ready"
     logo: {
       vbW: 327.13, vbH: 225.25,   // logo viewBox
@@ -53,7 +54,12 @@
 
   var site = document.getElementById('site');
   var logoCanvas = document.getElementById('pl-logo');
-  var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  // Visitors whose system has "Reduce motion" on get a calm version (static logo, plain fade). To preview the
+  // full animation on such a system, open the site with ?motion=full (and ?motion=reduced to force the calm one).
+  var motionParam = new URLSearchParams(window.location.search).get('motion');
+  var reduced = motionParam === 'full' ? false
+    : motionParam === 'reduced' ? true
+    : !!(CONFIG.respectReducedMotion && window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   var finished = false;
   var waveApi = null;
 
