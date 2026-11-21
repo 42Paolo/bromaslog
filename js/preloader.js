@@ -14,7 +14,6 @@
   'use strict';
 
   var CONFIG = {
-    storageKey: 'bromaslog:preloader',
     maxWaitMs: 6000,        // failsafe: never hold the visitor longer than this for "ready"
     posterGateMs: 1500,     // max time to wait for the poster to decode before lifting the veil
     maskEndX: -300,         // sweep rect x when the logo is fully revealed (see #pl-sweep in index.html)
@@ -34,14 +33,9 @@
   var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   var finished = false;
 
-  function markSeen() {
-    try { sessionStorage.setItem(CONFIG.storageKey, '1'); } catch (e) {}
-  }
-
   function finish() {
     if (finished) return;
     finished = true;
-    markSeen();
     if (video) { video.pause(); video.removeAttribute('src'); video.load(); }
     if (el.parentNode) el.parentNode.removeChild(el);
     root.classList.remove('is-loading');
@@ -81,7 +75,6 @@
     gsap.set(sweep, { attr: { x: CONFIG.maskEndX } });
     gsap.set(overlay, { opacity: 0 });
     pageReady.then(function () {
-      markSeen();
       gsap.to(el, { opacity: 0, duration: 0.4, ease: 'none', onComplete: finish });
     });
     return;
@@ -165,7 +158,6 @@
 
     // Phase 5 — hold until the homepage is ready, then slide the whole preloader up
     .addPause(T.exit, function () { pageReady.then(function () { tl.resume(); }); })
-    .add(function () { markSeen(); }, T.exit)
     .to(el, { yPercent: -100, duration: T.exitDur, ease: 'power3.inOut' }, T.exit)
     .add(function () { drift.kill(); finish(); });
 })();

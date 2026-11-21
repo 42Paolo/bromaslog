@@ -6,14 +6,8 @@
   <title>Bromaslog</title>
   <meta name="theme-color" content="#191B1D">
 
-  <!-- Decide BEFORE first paint whether the preloader runs (once per browser session). -->
-  <script>
-    (function (root) {
-      var seen = false;
-      try { seen = sessionStorage.getItem('bromaslog:preloader') === '1'; } catch (e) {}
-      root.classList.add(seen ? 'no-preloader' : 'is-loading');
-    })(document.documentElement);
-  </script>
+  <!-- Lock scrolling from the very first paint: the preloader runs on every load. -->
+  <script>document.documentElement.classList.add('is-loading');</script>
   <noscript><style>#preloader{display:none!important}</style></noscript>
 
   <link rel="preload" as="image" href="assets/fabric-poster-960.webp" type="image/webp" media="(max-width: 767px)" fetchpriority="high">
