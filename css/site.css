@@ -186,13 +186,13 @@ body {
 .site-tagline .ln { display: block; }
 .site-claim {
   margin: 0 0 calc(20 * var(--vr));
-  font: 500 calc(22 * var(--vr)) / 1.12 var(--font-sans);
+  font: 500 calc(18 * var(--vr)) / 1.12 var(--font-sans);          /* icomat: 18 */
   letter-spacing: -.01em;
   color: #fff;
 }
 .site-sub {
   margin: 0;
-  font: 400 calc(17 * var(--vr)) / 1.35 var(--font-sans);
+  font: 400 calc(18 * var(--vr)) / 1.35 var(--font-sans);          /* icomat: 18 */
   color: rgba(255, 255, 255, .62);
 }
 
@@ -202,8 +202,8 @@ body {
   .site-tagline-wrap { position: static; display: block; order: 3; margin: calc(28 * var(--vr)) 0 0; }
   .site-tagline { width: auto; max-width: 34ch; }
   .site-tagline .ln { display: inline; }
-  .site-claim { font-size: calc(19 * var(--vr)); }
-  .site-sub { font-size: calc(15 * var(--vr)); }
+  .site-claim { font-size: calc(16 * var(--vr)); }
+  .site-sub { font-size: calc(16 * var(--vr)); }
 }
 
 .site-eyebrow { margin: 0 0 calc(16 * var(--vr)); font-family: var(--font-mono); font-size: calc(12 * var(--vr)); letter-spacing: .14em; text-transform: uppercase; opacity: .6; }
@@ -211,11 +211,11 @@ body {
 .site-hero h1 {
   margin: 0;
   font-weight: 500;
-  font-size: calc(130 * var(--vr));
+  font-size: calc(60 * var(--vr));                                  /* icomat's hero title: 60 */
   line-height: .95;
   letter-spacing: -.03em;
 }
 
 @media (max-width: 767px) {
-  .site-hero h1 { font-size: calc(45 * var(--vr)); }
+  .site-hero h1 { font-size: calc(35 * var(--vr)); }                /* icomat on phones: 35 */
 }
