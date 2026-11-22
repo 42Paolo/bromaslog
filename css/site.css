@@ -329,3 +329,12 @@ html.lenis, html.lenis body { height: auto; }
 #chi-siamo .sec-text { color: rgba(10, 11, 13, .74); }
 .site-brand { transition: color .3s ease; }
 .site-brand.on-light { color: #0a0b0d; }
+
+/* The white page is exactly one screen tall (at least): scrolled to its top, the whole window is white. */
+#chi-siamo {
+  min-height: 100vh;
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
