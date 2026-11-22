@@ -6,7 +6,7 @@
  * 2) Parallax of the two side texts, only on screens >= 768px wide (on phones icomat does not move them):
  *    while you scroll through the first screen they rise more slowly than the page and drift sideways towards the
  *    centre, linearly, then stop when the first screen has gone by.
- *        headline (left) : rises at 66.7% of the page speed, moves right by 9.7% of the page width
+ *        headline (left) : rises at 66.7% of the page speed, straight vertical (no sideways drift)
  *        claim   (right) : rises at 59.1% of the page speed, moves left  by 2.7% of the page width
  *    The second page (opaque) slides over them.
  *
@@ -50,7 +50,7 @@
   /* ---------- parallax ---------- */
   var HERO = document.querySelector('.site-hero');
   var CONFIG = {
-    title: { rise: 1 - 0.667, dx: +0.097 },   // rise: fraction of the scroll that is added back (page speed * (1 - rise) = text speed)
+    title: { rise: 1 - 0.667, dx: 0 },          // the headline only moves vertically: no drift towards the centre   // rise: fraction of the scroll that is added back (page speed * (1 - rise) = text speed)
     claim: { rise: 1 - 0.591, dx: -0.027 }
   };
   var items = Array.prototype.slice.call(document.querySelectorAll('[data-parallax]'));
