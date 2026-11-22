@@ -378,3 +378,26 @@ html.lenis, html.lenis body { height: auto; }
     line-height: 1.55;
   }
 }
+
+/* Text link under the copy: "Discover Our Technology ↗" (same as the "Studio ↗" link on brand-nw.com: 16/24px, the arrow
+   nudges up and right by 3px on hover). Dark, because this page is white. */
+.sec-link { margin: 0; }
+.sec-textlink {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  font: 400 16px / 24px var(--font-sans);
+  color: #0a0b0d;
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+}
+.sec-textlink .arr { display: inline-block; transition: transform .2s cubic-bezier(.16, 1, .3, 1); }
+.sec-textlink:hover .arr, .sec-textlink:focus-visible .arr { transform: translate(3px, -3px); }
+.sec-textlink:focus-visible { outline: 2px solid #0a0b0d; outline-offset: 4px; }
+@media (min-width: 768px) {
+  /* the copy column has a 22.4px gap between its items; the link adds the rest of the brand-nw spacing (30-44px) */
+  #chi-siamo .sec-link { margin-top: calc(clamp(30px, 3vw, 44px) - 22.4px); }
+}
+@media (max-width: 767px) {
+  .sec-link { margin-top: 24px; }
+}
