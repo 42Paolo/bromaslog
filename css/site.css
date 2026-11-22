@@ -203,7 +203,7 @@ html.is-switching-lang .nav-links a { transition: none; }
   flex-direction: column;
   justify-content: flex-end;
   /* headline + label sit close to the bottom-left corner */
-  padding: 0 calc(40 * var(--vr)) calc(36 * var(--vr));
+  padding: 0 var(--pad-x) calc(36 * var(--vr));              /* same side margin as the logo and the bar */
 }
 
 /* Claim on the right: its centre is at 53% of the page height (the wrapper spans from 6% down to the bottom). */
@@ -263,7 +263,7 @@ html.lenis, html.lenis body { height: auto; }
 
 .site-section {
   position: relative;
-  padding: calc(120 * var(--vr)) calc(40 * var(--vr));
+  padding: calc(120 * var(--vr)) var(--pad-x);
   scroll-margin-top: 0;
 }
 .site-section { background: #0a0b0d; }   /* opaque: the hero texts slide away underneath this layer */
@@ -291,7 +291,7 @@ html.lenis, html.lenis body { height: auto; }
   display: flex;
   justify-content: space-between;
   gap: calc(16 * var(--vr));
-  padding: calc(28 * var(--vr)) calc(40 * var(--vr));
+  padding: calc(28 * var(--vr)) var(--pad-x);
   background: #0a0b0d;
   font-family: var(--font-mono);
   font-size: calc(11 * var(--vr));
@@ -350,14 +350,12 @@ html.lenis, html.lenis body { height: auto; }
     justify-content: flex-start;
     padding-top: clamp(60px, 10vw, 170px);
     padding-bottom: clamp(60px, 10vw, 170px);
-    padding-left: calc((100vw - min(90vw, 1500px)) / 2 + 25px);
-    padding-right: calc((100vw - min(90vw, 1500px)) / 2 + 25px);
+    padding-left: var(--pad-x);                /* the same side margin as the logo, the home and the black page */
+    padding-right: var(--pad-x);
   }
   #chi-siamo .sec-eyebrow {
     margin: 0 0 clamp(20px, calc(20px + (100vw - 1024px) * .0192), 30px);
-    font-size: 11px;
-    line-height: 16px;
-    letter-spacing: .09em;
+    line-height: 16px;                         /* size and tracking come from the base label style, same as the home's */
   }
   #chi-siamo .sec-title {
     max-width: min(50vw, 841px);
