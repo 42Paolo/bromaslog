@@ -350,8 +350,8 @@ html.lenis, html.lenis body { height: auto; }
     justify-content: flex-start;
     padding-top: clamp(60px, 10vw, 170px);
     padding-bottom: clamp(60px, 10vw, 170px);
-    padding-left: var(--pad-x);                /* the same side margin as the logo, the home and the black page */
-    padding-right: var(--pad-x);
+    padding-left: calc((100vw - min(90vw, 1500px)) / 2 + 25px);    /* brand-nw frame: the text starts further in than the home's, so the home's headline drifts towards it */
+    padding-right: calc((100vw - min(90vw, 1500px)) / 2 + 25px);
   }
   #chi-siamo .sec-eyebrow {
     margin: 0 0 clamp(20px, calc(20px + (100vw - 1024px) * .0192), 30px);
