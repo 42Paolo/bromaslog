@@ -1,5 +1,5 @@
 /*
- * Text that "writes itself": every letter goes from invisible to visible, one after the other (opacity only, nothing moves).
+ * Text that "writes itself": every word goes from invisible to visible, one after the other (opacity only, nothing moves).
  * It starts when the second page (the white one, #chi-siamo) comes into view.
  * Marked with data-lines="0|1|2": 0 = label, 1 = headline, 2 = paragraphs (all paragraphs share one sequence).
  * The label comes first, then the headline, then the paragraphs.
@@ -33,53 +33,46 @@
     });
     var label = parts.filter(Boolean).join(' ');
     el.textContent = '';
-    var chars = [];
+    var words = [];
     parts.forEach(function (w, i) {
       if (w === null) { el.appendChild(document.createElement('br')); return; }
-      var word = document.createElement('span');          // a word never breaks across two lines
-      word.style.display = 'inline-block';
-      word.style.whiteSpace = 'nowrap';
-      Array.prototype.forEach.call(w, function (ch) {
-        var c = document.createElement('span');
-        c.textContent = ch;
-        word.appendChild(c);
-        chars.push(c);
-      });
-      el.appendChild(word);
+      var s = document.createElement('span');
+      s.className = 'tw-word';
+      s.textContent = w;
+      el.appendChild(s);
       if (i < parts.length - 1 && parts[i + 1] !== null) el.appendChild(document.createTextNode(' '));
+      words.push(s);
     });
-    el.setAttribute('aria-label', label);  // the letters are decoration for assistive tech; the label carries the sentence
-    el._words = chars;
+    el.setAttribute('aria-label', label);  // the words are decoration for assistive tech; the label carries the sentence
+    el._words = words;
   }
 
-  function charsOf(group) {
+  function wordsOf(group) {
     var all = [];
     els.forEach(function (el) { if (el.getAttribute('data-lines') === group && el._words) all = all.concat(el._words); });
     return all;
   }
-  function allChars() {
+  function allWords() {
     return els.reduce(function (a, el) { return a.concat(el._words || []); }, []);
   }
 
   function splitAll() { els.forEach(split); }
-  function hideAll() { gsap.set(allChars(), { opacity: 0 }); }
-  function showAll() { gsap.set(allChars(), { opacity: 1 }); }
+  function hideAll() { gsap.set(allWords(), { opacity: 0 }); }
+  function showAll() { gsap.set(allWords(), { opacity: 1 }); }
 
   /* ---------- the reveal ---------- */
 
   function play() {
     if (revealed) return;
     revealed = true;
-    var label = charsOf('0'), title = charsOf('1'), body = charsOf('2');
-    // one letter every few hundredths of a second; the headline is written first, then the paragraphs
-    var t = 0;
-    if (label.length) { gsap.to(label, { opacity: 1, duration: 0.3, ease: 'none', stagger: 0.04 }); t = label.length * 0.04 + 0.1; }
-    if (title.length) { gsap.to(title, { opacity: 1, duration: 0.3, ease: 'none', stagger: 0.025, delay: t }); t += title.length * 0.025 + 0.15; }
-    if (body.length) gsap.to(body, { opacity: 1, duration: 0.3, ease: 'none', stagger: 0.009, delay: t });
+    var label = wordsOf('0'), title = wordsOf('1'), body = wordsOf('2');
+    if (label.length) gsap.to(label, { opacity: 1, duration: 0.8, ease: 'power1.out', stagger: 0.08 });
+    if (title.length) gsap.to(title, { opacity: 1, duration: 0.7, ease: 'power1.out', stagger: 0.09, delay: 0.15 });
+    if (body.length) gsap.to(body, { opacity: 1, duration: 0.6, ease: 'power1.out', stagger: 0.03, delay: 0.7 });
   }
 
   function rebuild() {
-    gsap.killTweensOf(allChars());
+    gsap.killTweensOf(allWords());
     splitAll();
     if (revealed) showAll(); else hideAll();
   }
