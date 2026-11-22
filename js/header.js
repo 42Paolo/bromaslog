@@ -1,6 +1,6 @@
 /*
  * Header behaviour while scrolling, ported from icomat.co.uk (their code, read from the live site):
- *   - scrolling DOWN: the brand and the navigation bar slide up out of the screen (0.3s, power1.out);
+ *   - scrolling DOWN: the brand and the navigation bar slide up out of the screen (here 0.65s, power2.inOut: gentler than icomat's 0.3s);
  *   - scrolling UP:   they slide back in (0.5s, power1.out).
  * A change of direction counts only after 50px of scrolling have accumulated since the last one, so small
  * movements or jitter never make it flicker. Same constants as icomat.
@@ -33,7 +33,7 @@
     if (!shown) return;
     shown = false;
     gsap.killTweensOf(targets);
-    gsap.to(targets, { y: distance, duration: 0.3, ease: 'power1.out' });
+    gsap.to(targets, { y: distance, duration: 0.65, ease: 'power2.inOut' });   // icomat: 0.3s power1.out; softer here
   }
 
   function onScroll() {
