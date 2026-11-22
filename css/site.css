@@ -338,3 +338,43 @@ html.lenis, html.lenis body { height: auto; }
   flex-direction: column;
   justify-content: center;
 }
+
+/* ---------- white page spacing: the same grid and spacing as brand-nw.com's "Studio position" block ----------
+   (measured on the live site at 1024, 1440 and 1920px wide).
+   - vertical padding 10vw (max 170px); content frame 90vw wide (max 1500px) centred, with 25px inside;
+   - label 11px, then the headline (3.4vw, between its minimum and 58px, leading 1.12, tracking -.025em);
+   - the copy sits in a column that starts at 35.65% of the frame, max 675px wide, paragraphs 22.4px apart,
+     15-17px text with leading 1.55. */
+@media (min-width: 768px) {
+  #chi-siamo {
+    justify-content: flex-start;
+    padding-top: clamp(60px, 10vw, 170px);
+    padding-bottom: clamp(60px, 10vw, 170px);
+    padding-left: calc((100vw - min(90vw, 1500px)) / 2 + 25px);
+    padding-right: calc((100vw - min(90vw, 1500px)) / 2 + 25px);
+  }
+  #chi-siamo .sec-eyebrow {
+    margin: 0 0 clamp(20px, calc(20px + (100vw - 1024px) * .0192), 30px);
+    font-size: 11px;
+    line-height: 16px;
+    letter-spacing: .09em;
+  }
+  #chi-siamo .sec-title {
+    max-width: min(50vw, 841px);
+    margin: 0 0 clamp(60px, calc(94px + (100vw - 1024px) * .0673), 130px);
+    font-size: clamp(30px, 3.4vw, 58px);
+    line-height: 1.12;
+    letter-spacing: -.025em;
+  }
+  #chi-siamo .sec-cols {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 22.4px;
+    max-width: 675px;
+    margin-left: 35.65%;
+  }
+  #chi-siamo .sec-text {
+    font-size: clamp(15px, 1.05vw, 17px);
+    line-height: 1.55;
+  }
+}
