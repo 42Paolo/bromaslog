@@ -68,7 +68,7 @@
     var label = wordsOf('0'), title = wordsOf('1'), body = wordsOf('2');
     if (label.length) gsap.to(label, { opacity: 1, duration: 0.8, ease: 'power1.out', stagger: 0.08 });
     if (title.length) gsap.to(title, { opacity: 1, duration: 0.7, ease: 'power1.out', stagger: 0.09, delay: 0.15 });
-    if (body.length) gsap.to(body, { opacity: 1, duration: 0.6, ease: 'power1.out', stagger: 0.03, delay: 0.7 });
+    if (body.length) gsap.to(body, { opacity: 1, duration: 0.6, ease: 'power1.out', stagger: Math.min(0.03, 1.8 / body.length), delay: 0.7 });   // long texts are written faster, so it never drags
   }
 
   function rebuild() {
