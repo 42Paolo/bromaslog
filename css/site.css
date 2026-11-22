@@ -256,8 +256,10 @@ html.is-switching-lang .nav-links a { transition: none; }
 }
 
 /* ---------- scrollable sections below the hero ---------- */
-html { scroll-behavior: smooth; }
-@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+/* Lenis (js/scroll.js) adds html.lenis: it needs these rules from its stylesheet. */
+html.lenis, html.lenis body { height: auto; }
+.lenis:not(.lenis-autoToggle).lenis-stopped { overflow: clip; }
+.lenis.lenis-smooth [data-lenis-prevent] { overscroll-behavior: contain; }
 
 .site-section {
   position: relative;
