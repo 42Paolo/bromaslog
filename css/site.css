@@ -401,3 +401,29 @@ html.lenis, html.lenis body { height: auto; }
 @media (max-width: 767px) {
   .sec-link { margin-top: 24px; }
 }
+
+/* ---------- scroll-triggered overlay: the black third page slides over the white second page ----------
+   The white page is sticky: once its bottom reaches the bottom of the screen it stays there (js/overlay.js sets --stick-top
+   for the case where it is taller than the screen) and the black page, which is above it, rises over it.
+   While it is being covered the white page darkens (--cover goes 0 -> 1) and its content moves up a little. */
+#chi-siamo { position: sticky; top: var(--stick-top, 0px); }
+#chi-siamo::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: #000;
+  opacity: calc(var(--cover, 0) * .6);
+  pointer-events: none;
+}
+#chi-siamo > * { transform: translateY(calc(var(--cover, 0) * var(--cover-shift, 0px))); }
+
+#portfolio {
+  z-index: 2;
+  min-height: 100vh;
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  background: #000;                 /* completely black */
+}
+.site-footer { z-index: 2; background: #000; }

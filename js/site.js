@@ -34,12 +34,14 @@
   'use strict';
   var brand = document.querySelector('.site-brand');
   var page = document.getElementById('chi-siamo');
+  var next = document.getElementById('portfolio');   // the black page that slides over the white one
   if (!brand || !page) return;
   function update() {
     var b = brand.getBoundingClientRect();
     var mid = (b.top + b.bottom) / 2;
     var s = page.getBoundingClientRect();
-    brand.classList.toggle('on-light', s.top < mid && s.bottom > mid);
+    var covered = next ? next.getBoundingClientRect().top <= mid : false;
+    brand.classList.toggle('on-light', s.top < mid && s.bottom > mid && !covered);
   }
   window.addEventListener('scroll', update, { passive: true });
   window.addEventListener('resize', update);
