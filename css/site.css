@@ -320,3 +320,12 @@ html.lenis, html.lenis body { height: auto; }
 [data-parallax] { will-change: transform; }
 .site-footer { position: relative; }
 .site-section, .site-footer { z-index: 1; }
+
+/* ---------- second page: white ----------
+   Only this page is white (the rest of the site stays dark). The glass bar keeps its dark look; the fixed brand turns
+   dark while it is over this page (class added by js/site.js). */
+#chi-siamo { background: #fff; color: #0a0b0d; }
+#chi-siamo .sec-eyebrow { opacity: .55; }
+#chi-siamo .sec-text { color: rgba(10, 11, 13, .74); }
+.site-brand { transition: color .3s ease; }
+.site-brand.on-light { color: #0a0b0d; }

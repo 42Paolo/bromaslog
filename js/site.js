@@ -28,3 +28,20 @@
     io.observe(el);
   });
 })();
+
+/* The brand (top-left, fixed) turns dark while it is over the white second page. */
+(function () {
+  'use strict';
+  var brand = document.querySelector('.site-brand');
+  var page = document.getElementById('chi-siamo');
+  if (!brand || !page) return;
+  function update() {
+    var b = brand.getBoundingClientRect();
+    var mid = (b.top + b.bottom) / 2;
+    var s = page.getBoundingClientRect();
+    brand.classList.toggle('on-light', s.top < mid && s.bottom > mid);
+  }
+  window.addEventListener('scroll', update, { passive: true });
+  window.addEventListener('resize', update);
+  update();
+})();
