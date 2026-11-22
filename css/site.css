@@ -378,7 +378,3 @@ html.lenis, html.lenis body { height: auto; }
     line-height: 1.55;
   }
 }
-
-/* Line-by-line text reveal (js/textreveal.js): each line sits in a mask that clips it; the lines rise from below. */
-.tl-mask { display: block; overflow: clip; padding: .08em 0 .16em; margin: -.08em 0 -.16em; }
-.tl-line { display: block; will-change: transform; }
