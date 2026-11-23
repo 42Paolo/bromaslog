@@ -10,25 +10,15 @@
   <script>document.documentElement.classList.add('is-loading');</script>
   <noscript><style>#preloader{display:none!important}html{overflow:auto!important}</style></noscript>
 
-  <link rel="preload" as="image" href="assets/bg-poster-960.webp" type="image/webp" media="(max-width: 767px)" fetchpriority="high">
-  <link rel="preload" as="image" href="assets/bg-poster.webp" type="image/webp" media="(min-width: 768px)" fetchpriority="high">
   <link rel="preload" href="assets/fonts/ibm-plex-mono-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="css/preloader.css?v=20261147">
-  <link rel="stylesheet" href="css/site.css?v=20261147">
-  <link rel="stylesheet" href="css/contact.css?v=20261147">
+  <link rel="stylesheet" href="css/preloader.css?v=20261148">
+  <link rel="stylesheet" href="css/site.css?v=20261148">
+  <link rel="stylesheet" href="css/contact.css?v=20261148">
 </head>
 <body id="top">
 
-  <!-- Background of the site: a still frame first (instant), the looping GIF fades in over it once it has loaded. -->
-  <div id="site-bg" aria-hidden="true">
-    <picture>
-      <source media="(max-width: 767px)" srcset="assets/bg-poster-960.webp" type="image/webp">
-      <img class="bg-poster" src="assets/bg-poster.webp" alt="" width="1280" height="720"
-           fetchpriority="high" decoding="async" draggable="false">
-    </picture>
-    <!-- No src on purpose: js/preloader.js loads it after the page is ready (and skips it for reduced motion / data saver). -->
-    <img class="bg-gif" alt="" width="640" height="360" data-src="assets/king-loop.gif" decoding="async" draggable="false">
-  </div>
+  <!-- Background of the site: a plain grey (colour set in css/site.css, --site-grey). -->
+  <div id="site-bg" aria-hidden="true"></div>
 
   <!-- Preloader: off-white paper + the logo drawn part by part on a canvas (BRO / MAS / LOG).
        The closing "wave" is a WebGL canvas created by js/preloader.js. -->
@@ -199,14 +189,14 @@
   </main>
 
   <script src="js/vendor/gsap.min.js"></script>
-  <script src="js/preloader.js?v=20261147"></script>
+  <script src="js/preloader.js?v=20261148"></script>
   <script src="js/vendor/lenis.min.js"></script>
-  <script src="js/scroll.js?v=20261147"></script>
-  <script src="js/header.js?v=20261147"></script>
-  <script src="js/textreveal.js?v=20261147"></script>
-  <script src="js/overlay.js?v=20261147"></script>
-  <script src="js/site.js?v=20261147"></script>
-  <script src="js/i18n.js?v=20261147"></script>
-  <script src="js/contact.js?v=20261147"></script>
+  <script src="js/scroll.js?v=20261148"></script>
+  <script src="js/header.js?v=20261148"></script>
+  <script src="js/textreveal.js?v=20261148"></script>
+  <script src="js/overlay.js?v=20261148"></script>
+  <script src="js/site.js?v=20261148"></script>
+  <script src="js/i18n.js?v=20261148"></script>
+  <script src="js/contact.js?v=20261148"></script>
 </body>
 </html>
