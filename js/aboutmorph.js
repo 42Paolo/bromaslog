@@ -7,7 +7,7 @@
  * on until it has finished. A small state machine drives it: INITIAL -> FWD -> FINAL -> REV -> INITIAL.
  *   - Scrolling DOWN past the page while in INITIAL plays the sequence forward (about 3 s).
  *   - Scrolling back UP past the page while in FINAL plays it backwards (half the time).
- *   - Arriving on the page never starts anything by itself: the page rests there (~0.35 s) and a new scroll gesture is needed.
+ *   - Arriving on the page never starts anything by itself: the page rests there (~0.5 s) and a new scroll gesture is needed.
  *
  * One GSAP timeline holds everything, so reversing it is simply timeline.reverse():
  *   - headline: FLIP, every word travels from its place in the three lines to its place in the one-line layout and grows to the final size;
@@ -38,7 +38,7 @@
   var desktop = window.matchMedia ? window.matchMedia('(min-width: 768px)') : { matches: true };
   var lenis = window.bromaslogLenis || null;
 
-  var HOLD = 350;               // ms the page rests on arrival before a scroll attempt counts
+  var HOLD = 500;               // ms the page rests on arrival before a scroll attempt counts
   var FRESH_GAP = 100;          // ms of silence that make a wheel event a new gesture (not the tail of a trackpad flick)
   var REVERSE_SPEED = 2;        // the way back runs twice as fast
   var CELL = 3;                 // size of the dissolve squares, in CSS px
@@ -395,21 +395,39 @@
     if (Date.now() >= holdUntil) start(arrived === 'down' ? 'FWD' : 'REV');
   }
 
+  // Trackpads keep sending small wheel events for a second or more after the fingers have left (inertia), and a visitor often starts the
+  // next swipe before that has died down. So a scroll attempt is: after the rest, a wheel event of some size that is either a new gesture
+  // (a gap before it), a swipe that picks up speed, or simply comes well after the rest.
+  var prevAbs = 0, pending = 0;
   window.addEventListener('wheel', function (e) {
     if (!active() || !tl) return;
     var now = Date.now();
     var fresh = now - lastWheel > FRESH_GAP;
+    var abs = Math.abs(e.deltaY);
+    var rising = abs > prevAbs + 3;
     lastWheel = now;
+    prevAbs = abs;
     if (running()) { if (e.cancelable) e.preventDefault(); e.stopPropagation(); return; }
     if (swallowTail) {                                                      // the sequence has just ended: the rest of that gesture does nothing
-      if (!fresh) { if (e.cancelable) e.preventDefault(); e.stopPropagation(); return; }
+      if (!fresh && !rising) { if (e.cancelable) e.preventDefault(); e.stopPropagation(); return; }
       swallowTail = false;
     }
     if (!arrived) return;
     var down = e.deltaY > 0;
-    if (Math.abs(e.deltaY) < 4) { if (e.cancelable) e.preventDefault(); return; }
-    if ((arrived === 'down') === down && !fresh) { if (e.cancelable) e.preventDefault(); return; }   // tail of the flick that brought us here
-    attempt(down, e);
+    if ((arrived === 'down') !== down) { attempt(down, e); return; }        // the other way: the page is let go
+    if (e.cancelable) e.preventDefault();
+    if (abs < 6) return;
+    if (now < holdUntil) {                                                  // a real new swipe during the rest is not lost: it starts when the rest is over
+      if ((fresh || rising) && !pending) {
+        var dir = arrived;
+        pending = window.setTimeout(function () {
+          pending = 0;
+          if (arrived === dir && !running()) start(dir === 'down' ? 'FWD' : 'REV');
+        }, holdUntil - now + 20);
+      }
+      return;
+    }
+    if (fresh || rising || now >= holdUntil + 500) attempt(down, e);
   }, { passive: false, capture: true });
 
   window.addEventListener('keydown', function (e) {
