@@ -47,3 +47,30 @@
   window.addEventListener('resize', update);
   update();
 })();
+
+/* Background video: with "reduce motion" or a data-saver / slow connection it is not played (the download is dropped):
+   the still frame stays instead. */
+(function () {
+  'use strict';
+  var video = document.querySelector('.bg-video');
+  if (!video) return;
+  var params = new URLSearchParams(window.location.search);
+  var reduced = params.get('motion') === 'reduced' ||
+    (params.get('motion') !== 'full' && !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches));
+  var conn = navigator.connection;
+  var saver = !!(conn && (conn.saveData || /(^|-)2g$/.test(conn.effectiveType || '')));
+  if (reduced || saver) {
+    var holder = video.parentNode;
+    holder.style.backgroundImage = 'url(' + video.getAttribute('poster') + ')';
+    video.pause();
+    video.removeAttribute('autoplay');
+    while (video.firstChild) video.removeChild(video.firstChild);
+    video.load();
+    video.parentNode.removeChild(video);
+    return;
+  }
+  // some browsers need a nudge when autoplay started before the page was visible
+  var start = function () { var p = video.play(); if (p && p.catch) p.catch(function () {}); };
+  window.addEventListener('preloader:complete', start);
+  window.addEventListener('pageshow', start);
+})();
