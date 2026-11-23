@@ -410,6 +410,41 @@ html.lenis, html.lenis body { height: auto; }
 /* The headline's words are separate boxes so js/aboutmorph.js can move them (same layout as plain inline text). */
 #chi-siamo .sec-title .tw-word { display: inline-block; }
 
+/* ---------- second state of the white page: the TEXY TRJ W machine (js/aboutmorph.js) ----------
+   Desktop/tablet: a two-column block (photo left, text right) laid over the lower part of the page. Its top (--am-top) is set
+   by the script from the one-line headline. The photo waits below the page, clipped out of sight; the text is hidden until shown.
+   Phones: no cinematic transition, the block simply follows the text (photo above the description). */
+.about-machine { margin-top: 56px; display: flex; flex-direction: column; gap: 28px; }
+.am-img { display: block; width: 100%; height: auto; }
+.am-title { margin: 0; font: 400 24px / 1.2 var(--font-sans); letter-spacing: .15em; text-transform: uppercase; color: #111; }
+.am-text { margin: 18px 0 0; font: 400 16px / 1.6 var(--font-sans); color: #555; }
+.am-link { margin: 28px 0 0; }
+.about-machine.am-pre .am-media, .about-machine.am-pre .am-copy { opacity: 0; transform: translateY(24px); }
+.about-machine .am-media, .about-machine .am-copy { transition: opacity .9s cubic-bezier(.2, .7, .2, 1), transform .9s cubic-bezier(.2, .7, .2, 1); }
+
+@media (min-width: 768px) {
+  #chi-siamo { overflow: clip; }
+  .about-machine {
+    position: absolute;
+    left: calc((100vw - min(90vw, 1500px)) / 2 + 25px);
+    right: calc((100vw - min(90vw, 1500px)) / 2 + 25px);
+    top: var(--am-top, 340px);
+    margin: 0;
+    display: grid;
+    grid-template-columns: 42% minmax(0, 1fr);
+    column-gap: clamp(32px, 3.5vw, 64px);
+    align-items: start;
+  }
+  .about-machine .am-media, .about-machine .am-copy { transition: none; }
+  .about-machine .am-media { transform: translateY(120vh); will-change: transform; }
+  .about-machine .am-copy { visibility: hidden; }
+  .am-title { font-size: clamp(24px, 2.05vw, 36px); }
+  .am-text { margin-top: clamp(24px, 2.2vw, 34px); font-size: clamp(15px, 1.05vw, 17px); line-height: 1.6; }
+  .am-link { margin-top: clamp(30px, 3vw, 44px); }
+}
+.am-fx { position: absolute; z-index: 3; pointer-events: none; }
+html.is-about-hold { scrollbar-gutter: stable; }
+
 #portfolio {
   z-index: 2;
   min-height: 100vh;
