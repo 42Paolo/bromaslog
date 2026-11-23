@@ -407,6 +407,9 @@ html.lenis, html.lenis body { height: auto; }
 }
 #chi-siamo > * { transform: translateY(calc(var(--cover, 0) * var(--cover-shift, 0px))); }
 
+/* The headline's words are separate boxes so js/aboutmorph.js can move them (same layout as plain inline text). */
+#chi-siamo .sec-title .tw-word { display: inline-block; }
+
 #portfolio {
   z-index: 2;
   min-height: 100vh;
