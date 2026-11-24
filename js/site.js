@@ -34,7 +34,7 @@
   'use strict';
   var brand = document.querySelector('.site-brand');
   var page = document.getElementById('chi-siamo');
-  var next = document.getElementById('portfolio') || document.getElementById('finale');   // the black page that slides over the white one
+  var next = document.getElementById('portfolio');   // the black page that slides over the white one
   if (!brand || !page) return;
   var queued = false;
   function schedule() {                                 // once per frame, however many scroll events came
@@ -52,19 +52,6 @@
   window.addEventListener('scroll', schedule, { passive: true });
   window.addEventListener('resize', schedule);
   update();
-})();
-
-/* Buttons on the page that open the contact panel (the same one the "Contatti" button of the bar opens). */
-(function () {
-  'use strict';
-  var trigger = document.getElementById('contact-trigger');
-  if (!trigger) return;
-  document.addEventListener('click', function (e) {
-    var b = e.target.closest && e.target.closest('[data-open-contact]');
-    if (!b) return;
-    e.preventDefault();
-    trigger.click();
-  });
 })();
 
 /* Background video: with "reduce motion" or a data-saver / slow connection it is not played (the download is dropped):

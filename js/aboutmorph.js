@@ -65,7 +65,6 @@
   var tl = null, tlS = null, slideTw = null;     // tl: the first sequence; tlS: the carousel (one timeline, SLIDE seconds per step)
   var SLIDE = 2.6;
   var dirty = false;            // a resize / language change came while the sequence was running
-  var linking = false;          // a link is carrying the visitor from the white page to the black one: the page is not held on the way
   var fx = { old: 0, neu: 0, s2: 0, s3: 0 };  // progress of the square transitions, and of the two carousel steps
 
   function running() { return /^(FWD|REV)[23]?$/.test(state); }
@@ -484,11 +483,6 @@
   function onScroll() {
     if (!active() || !tl) return;
     var y = window.pageYOffset, g = gateY();
-    if (linking) {                                                   // a link is carrying the visitor below the white page
-      if (y > g + 0.7 * window.innerHeight) { linking = false; if (state !== 'THIRD' && !running()) jump(3); }   // covered now: the last state is put in place unseen
-      else if (y < lastY && y <= g + 0.5) linking = false;           // changed their mind: back through the gate, the normal rules apply
-      else { lastY = y; return; }
-    }
     if (running() || arrived) clampToGate();
     // The page rests on the gate whenever there is a step in the direction the visitor goes: arriving at it, or leaving it from where it
     // stopped (the step before may have ended right here), either way one scroll attempt has to be made to go on.
@@ -564,48 +558,17 @@
     attempt(dy > 0, e);
   }, { passive: false, capture: true });
 
-  // Links. One to something below the white page lets the page go (nothing should hold it) and, once the black page that follows has
-  // covered the white one, puts it in its last state (the visitor finds it there on the way back, so no step can be skipped).
-  // One to the top of the site starts it over. A machine in the index of the last page (data-machine="1|2|3") puts the white page on
-  // that machine, out of sight under the black page, and the page then slides back up to it.
+  // Links: one to something below the white page takes the page to its final state at once (nothing should hold it);
+  // one to the top of the site starts it over.
   document.addEventListener('click', function (e) {
     var a = e.target.closest && e.target.closest('a[href^="#"]');
-    if (!a || running()) return;
-    var m = a.getAttribute('data-machine');
-    if (m) {
-      var n = parseInt(m, 10);
-      if (!active() || !tl) {                                                     // phones / reduced motion: the machines are simply on the page
-        var block = machines[n - 1];
-        if (!block) return;
-        e.preventDefault();
-        // the white page is sticky and sits under the black one, so the machine's place on screen means nothing here: work out where it
-        // is in the page as laid out naturally (the page that follows starts right where the white one ends)
-        var after = section.nextElementSibling;
-        var natural = after ? after.offsetTop - section.offsetHeight : section.offsetTop;
-        var to = Math.max(0, natural + block.offsetTop - 80);
-        if (lenis) lenis.scrollTo(to, { force: true }); else window.scrollTo({ top: to, behavior: reduced ? 'auto' : 'smooth' });
-        return;
-      }
-      e.preventDefault();
-      linking = false;
-      jump(n);
-      if (Math.abs(window.pageYOffset - gateY()) < 1) arrive('up');                // already here (nothing to scroll): rest on it as usual
-      else if (lenis) lenis.scrollTo(gateY(), { force: true });
-      else window.scrollTo(0, gateY());
-      return;
-    }
-    if (!active() || !tl) return;
+    if (!a || !active() || !tl || running()) return;
     var id = a.getAttribute('href').slice(1);
     var target = id === 'top' ? hero : (id && document.getElementById(id));
     if (!target || target === section) return;
     var below = target.getBoundingClientRect().top + window.pageYOffset > section.offsetTop;
-    if (below) {
-      if (state !== 'THIRD') linking = true;
-      if (arrived || root.classList.contains('is-about-hold')) { release(); swallowTail = false; }
-    } else {
-      linking = false;
-      if (state !== 'INITIAL') jump(0);
-    }
+    if (below && state !== 'THIRD') jump(3);
+    else if (!below && state !== 'INITIAL') jump(0);
   }, true);
 
   /* ======================================================================
@@ -631,7 +594,7 @@
     cols.removeAttribute('aria-hidden');
     section.style.minHeight = '';
     clearFx();
-    state = 'INITIAL'; arrived = null; linking = false;
+    state = 'INITIAL'; arrived = null;
     lock(false);
     // simple fade-up when they scroll into view (nothing at all with reduced motion)
     if (io) { io.disconnect(); io = null; }
