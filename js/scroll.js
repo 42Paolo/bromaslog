@@ -57,23 +57,31 @@
   var desktop = window.matchMedia ? window.matchMedia('(min-width: 768px)') : { matches: true };
   if (!HERO || !items.length) return;
 
+  // measured once (and on resize), not on every scroll event: reading the layout there would force a reflow each time
+  var heroH = HERO.offsetHeight || window.innerHeight, vw = window.innerWidth;
+  var cfg = items.map(function (el) { return CONFIG[el.getAttribute('data-parallax')]; });
+  var lastY = -1;
+  function measure() { heroH = HERO.offsetHeight || window.innerHeight; vw = window.innerWidth; lastY = -1; update(); }
+
   function update() {
     if (!desktop.matches) {
-      items.forEach(function (el) { el.style.transform = ''; });
+      if (lastY !== -2) items.forEach(function (el) { el.style.transform = ''; });
+      lastY = -2;
       return;
     }
-    var heroH = HERO.offsetHeight || window.innerHeight;
     var y = Math.min(Math.max(window.pageYOffset, 0), heroH);       // everything stops once the first screen has passed
+    if (y === lastY) return;                                         // past the first screen: nothing moves any more
+    lastY = y;
     var p = y / heroH;
-    items.forEach(function (el) {
-      var c = CONFIG[el.getAttribute('data-parallax')];
+    items.forEach(function (el, i) {
+      var c = cfg[i];
       if (!c) return;
-      el.style.transform = 'translate3d(' + (p * c.dx * window.innerWidth).toFixed(2) + 'px,' + (y * c.rise).toFixed(2) + 'px,0)';
+      el.style.transform = 'translate3d(' + (p * c.dx * vw).toFixed(2) + 'px,' + (y * c.rise).toFixed(2) + 'px,0)';
     });
   }
 
   window.addEventListener('scroll', update, { passive: true });
-  window.addEventListener('resize', update);
-  if (desktop.addEventListener) desktop.addEventListener('change', update);
+  window.addEventListener('resize', measure);
+  if (desktop.addEventListener) desktop.addEventListener('change', measure);
   update();
 })();

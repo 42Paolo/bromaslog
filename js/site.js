@@ -36,6 +36,12 @@
   var page = document.getElementById('chi-siamo');
   var next = document.getElementById('portfolio');   // the black page that slides over the white one
   if (!brand || !page) return;
+  var queued = false;
+  function schedule() {                                 // once per frame, however many scroll events came
+    if (queued) return;
+    queued = true;
+    window.requestAnimationFrame(function () { queued = false; update(); });
+  }
   function update() {
     var b = brand.getBoundingClientRect();
     var mid = (b.top + b.bottom) / 2;
@@ -43,8 +49,8 @@
     var covered = next ? next.getBoundingClientRect().top <= mid : false;
     brand.classList.toggle('on-light', s.top < mid && s.bottom > mid && !covered);
   }
-  window.addEventListener('scroll', update, { passive: true });
-  window.addEventListener('resize', update);
+  window.addEventListener('scroll', schedule, { passive: true });
+  window.addEventListener('resize', schedule);
   update();
 })();
 
@@ -71,6 +77,19 @@
   }
   // some browsers need a nudge when autoplay started before the page was visible
   var start = function () { var p = video.play(); if (p && p.catch) p.catch(function () {}); };
-  window.addEventListener('preloader:complete', start);
+  var loaded = !document.documentElement.classList.contains('is-loading');
+  window.addEventListener('preloader:complete', function () { loaded = true; start(); });
   window.addEventListener('pageshow', start);
+
+  // Once the white page covers the first screen nothing of the video can be seen: stop decoding it and drop its layers
+  // (it starts again as soon as the first screen is back in view).
+  var bg = document.getElementById('site-bg');
+  var hero = document.querySelector('.site-hero');
+  if (bg && hero && 'IntersectionObserver' in window) {
+    new IntersectionObserver(function (entries) {
+      var seen = entries[entries.length - 1].isIntersecting;
+      bg.style.visibility = seen ? '' : 'hidden';
+      if (!seen) video.pause(); else if (loaded) start();
+    }, { threshold: 0, rootMargin: '-2px 0px -2px 0px' }).observe(hero);   // (the margin: a first screen that only touches the edge of the window does not count as seen)
+  }
 })();

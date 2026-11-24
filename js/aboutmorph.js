@@ -75,10 +75,13 @@
   function active() { return desktop.matches && !reduced; }
   // Scroll position at which the page rests: the white page is fully in view. When it is a little taller than the screen that is
   // where its bottom edge meets the bottom of the screen (the point where the black footer starts to slide over it), not where its top does.
-  function gateY() {
-    var extra = Math.max(0, Math.min(section.offsetHeight - window.innerHeight, 120));
-    return hero.offsetHeight + extra;
+  // (measured when the layout changes, not on every scroll event: reading sizes there would force a reflow each time)
+  var gate = hero.offsetHeight;
+  function computeGate() {
+    gate = hero.offsetHeight + Math.max(0, Math.min(section.offsetHeight - window.innerHeight, 120));
   }
+  function gateY() { return gate; }
+  if (window.ResizeObserver) { var gro = new ResizeObserver(computeGate); gro.observe(hero); gro.observe(section); }
   // textreveal.js splits the headline into words; with "reduce motion" it does not run, so do it here (same markup, nothing hidden).
   function ensureWords() {
     if (title.querySelector('.tw-word')) return;
@@ -250,6 +253,8 @@
     return { src: src, cs: cs, n: sx.length, sx: sx, sy: sy, t: t, vx: vx, vy: vy, left: box.l, top: box.t, dpr: dpr };
   }
 
+  var fxReady = false;
+  function ensureFx() { if (!fxReady) { prepareFx(); fxReady = true; } }   // cutting the text into squares takes a few tens of ms: done while the page rests, not when the sequence starts
   function prepareFx() {
     var dpr = Math.min(window.devicePixelRatio || 1, 2);
     var oldWords = collectWords(Array.prototype.slice.call(cols.querySelectorAll('.sec-text, .sec-textlink')));
@@ -324,9 +329,11 @@
 
   function build() {
     killTl();
+    fxReady = false;
     var info = targets();
     if (!info) return false;
     var dy = layout(info);
+    computeGate();
     var kids1 = Array.prototype.slice.call(copy.children), kids2 = Array.prototype.slice.call(copy2.children);
     gsap.set(media, { x: 0, y: dy });
     gsap.set(img, { x: 0 }); gsap.set(kids1, { x: 0, opacity: 1 });
@@ -406,6 +413,7 @@
     holdUntil = Date.now() + HOLD;
     lock(true);
     clampToGate();
+    window.requestAnimationFrame(function () { if (arrived && !running()) ensureFx(); });
   }
 
   function release() {
@@ -432,7 +440,7 @@
     if (!tl || running()) return;
     if (dirty) { dirty = false; rebuild(); }
     arrived = null;
-    if (next === 'FWD' || next === 'REV') prepareFx();
+    if (next === 'FWD' || next === 'REV') ensureFx();
     state = next;
     if (next === 'FWD') tl.timeScale(1).play(0);
     else if (next === 'REV') tl.timeScale(REVERSE_SPEED).reverse(tl.duration());

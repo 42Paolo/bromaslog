@@ -24,7 +24,10 @@
   var anchor = 0;                          // scroll position the rise is measured from
   var offset = 0;                          // how far the bar has risen (px, >= 0)
 
-  function maxOffset() { return header.offsetHeight + 40; }   // far enough to clear the bar and its shadow
+  var headerH = header.offsetHeight, maxScroll = root.scrollHeight - window.innerHeight;   // measured on resize, not on every scroll event
+  function measure() { headerH = header.offsetHeight; maxScroll = root.scrollHeight - window.innerHeight; }
+  if (window.ResizeObserver) new ResizeObserver(measure).observe(root); else window.addEventListener('resize', measure);
+  function maxOffset() { return headerH + 40; }   // far enough to clear the bar and its shadow
 
   function follow(y) {
     var next = Math.min(maxOffset(), Math.max(offset, SPEED * (y - anchor)));   // never sinks back by itself
@@ -42,8 +45,7 @@
 
   function onScroll() {
     var y = window.pageYOffset;
-    var max = root.scrollHeight - window.innerHeight;
-    if (y < 0 || y > max) return;                              // rubber-band overscroll: ignore
+    if (y < 0 || y > maxScroll) return;                              // rubber-band overscroll: ignore
     if (root.classList.contains('is-loading') || root.classList.contains('is-contact-open')) return;   // locked page
 
     var delta = y - last;

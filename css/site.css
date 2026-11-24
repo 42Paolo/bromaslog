@@ -109,9 +109,7 @@ body {
   border-radius: var(--nav-radius);
   color: #fff;
   /* Mostly opaque dark bar: just a hint of the page showing through and a light blur. */
-  background: rgba(10, 11, 13, .90);
-  -webkit-backdrop-filter: blur(6px) saturate(120%);
-  backdrop-filter: blur(6px) saturate(120%);
+  background: rgba(10, 11, 13, .92);   /* no backdrop blur: re-blurring the moving video behind it on every frame is costly and hardly visible at this opacity */
   border: 1px solid rgba(255, 255, 255, .09);
   box-shadow:
     0 8px 24px rgba(0, 0, 0, .30),
@@ -415,12 +413,7 @@ html.lenis, html.lenis body { height: auto; }
    by the script from the one-line headline. The photo waits below the page, clipped out of sight; the text is hidden until shown.
    Phones: no cinematic transition, the block simply follows the text (photo above the description). */
 .about-machine { margin-top: 56px; display: flex; flex-direction: column; gap: 28px; }
-.am-img { display: block; width: 100%; height: auto; mix-blend-mode: multiply;   /* the render has a white background: it melts into the white page */
-  -webkit-mask-image: linear-gradient(to bottom, #000 88%, transparent), linear-gradient(to right, transparent, #000 5%, #000 95%, transparent);
-  -webkit-mask-composite: source-in;
-  mask-image: linear-gradient(to bottom, #000 88%, transparent), linear-gradient(to right, transparent, #000 5%, #000 95%, transparent);
-  mask-composite: intersect;                 /* the soft floor of the render fades out at the edges, no hard cut */
-}
+.am-img { display: block; width: 100%; height: auto; }   /* the renders have a pure white background and soft edges baked in (no blend mode, no mask: they would be re-computed on every frame while moving) */
 .am-title { margin: 0; font: 400 24px / 1.2 var(--font-sans); letter-spacing: .15em; text-transform: uppercase; color: #111; }
 .am-text { margin: 18px 0 0; font: 400 16px / 1.6 var(--font-sans); color: #555; }
 .am-link { margin: 28px 0 0; }
