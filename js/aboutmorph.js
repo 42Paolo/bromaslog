@@ -352,9 +352,11 @@
     tl2.to(img, { x: -110, duration: 1.6, ease: 'power3.inOut' }, 0);
     tl2.to(media2, { x: 0, duration: 1.6, ease: 'power3.inOut' }, 0.1);
     tl2.to(img2, { x: 0, duration: 1.6, ease: 'power3.inOut' }, 0.1);
-    tl2.to(kids1, { x: -60, opacity: 0, duration: 0.6, ease: 'power2.in', stagger: 0.05 }, 0);
-    tl2.to(kids2, { x: 0, opacity: 1, duration: 0.9, ease: 'power3.out', stagger: 0.08 }, 0.7);
+    // the text of machine 1 is gone before photo 2 reaches its column, and the text of machine 2 only appears once photo 2 has cleared its column
+    tl2.to(kids1, { x: -60, opacity: 0, duration: 0.35, ease: 'power2.in', stagger: 0.03 }, 0);
+    tl2.to(kids2, { x: 0, opacity: 1, duration: 0.8, ease: 'power3.out', stagger: 0.06 }, 1.45);
     tl2.to(fx, { slide: 1, duration: 1.7, ease: 'none' }, 0);
+    tl2.to({}, { duration: 0.05 }, 2.5);                                            // settle
     return true;
   }
 
