@@ -8,7 +8,7 @@
 (function () {
   'use strict';
   var white = document.getElementById('chi-siamo');
-  var black = document.getElementById('portfolio');
+  var black = document.getElementById('portfolio') || document.getElementById('finale');   // the first black page after the white one
   if (!white) return;               // the black page may be switched off: the white page still needs its sticky position
 
   var params = new URLSearchParams(window.location.search);
