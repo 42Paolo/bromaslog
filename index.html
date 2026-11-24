@@ -8,6 +8,13 @@
 
   <!-- Lock scrolling from the very first paint: the preloader runs on every load. -->
   <script>document.documentElement.classList.add('is-loading');</script>
+  <!-- A reload always starts from the top (the browser would otherwise put you back where you were, in the middle of the page sequence). -->
+  <script>
+    try { if ('scrollRestoration' in history) history.scrollRestoration = 'manual'; } catch (e) {}
+    try { if (location.hash) history.replaceState(null, '', location.pathname + location.search); } catch (e) {}
+    window.scrollTo(0, 0);
+    window.addEventListener('pageshow', function (e) { if (!e.persisted) window.scrollTo(0, 0); });
+  </script>
   <noscript><style>#preloader{display:none!important}html{overflow:auto!important}</style></noscript>
 
   <link rel="preload" href="assets/fonts/ibm-plex-mono-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
