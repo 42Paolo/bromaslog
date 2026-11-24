@@ -34,7 +34,7 @@
   'use strict';
   var brand = document.querySelector('.site-brand');
   var page = document.getElementById('chi-siamo');
-  var next = document.getElementById('portfolio');   // the black page that slides over the white one
+  var next = document.getElementById('portfolio') || document.getElementById('visione');   // the black page that slides over the white one
   if (!brand || !page) return;
   var queued = false;
   function schedule() {                                 // once per frame, however many scroll events came

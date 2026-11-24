@@ -456,3 +456,24 @@ html.is-about-hold { scrollbar-gutter: stable; }
   background: #000;                 /* completely black */
 }
 .site-footer { z-index: 2; background: #000; }
+
+/* ---------- last page: "La nostra visione" ----------
+   Black page that rises over the white one (js/overlay.js). Taller than the screen, so it scrolls; the text is still to come. */
+#visione {
+  z-index: 2;
+  background: #000;
+  min-height: 200vh;
+  min-height: 200svh;
+  padding-top: calc(150 * var(--vr));
+}
+@media (min-width: 768px) {
+  #visione {
+    padding-left: calc((100vw - min(90vw, 1500px)) / 2 + 25px);
+    padding-right: calc((100vw - min(90vw, 1500px)) / 2 + 25px);
+  }
+}
+.vision-title { margin: 0; max-width: 12ch; font-weight: 500; font-size: calc(96 * var(--vr)); line-height: .98; letter-spacing: -.035em; }
+@media (max-width: 767px) {
+  #visione { padding-top: calc(110 * var(--vr)); }
+  .vision-title { font-size: calc(48 * var(--vr)); }
+}

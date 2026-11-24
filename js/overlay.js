@@ -8,8 +8,8 @@
 (function () {
   'use strict';
   var white = document.getElementById('chi-siamo');
-  var black = document.getElementById('portfolio');
-  if (!white) return;               // the black page may be switched off: the white page still needs its sticky position
+  var black = document.getElementById('portfolio') || document.getElementById('visione');   // the first black page after the white one
+  if (!white) return;              // the black page may be switched off: the white page still needs its sticky position
 
   var params = new URLSearchParams(window.location.search);
   var reduced = params.get('motion') === 'reduced' ||
