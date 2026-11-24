@@ -57,7 +57,12 @@
 
   function running() { return state === 'FWD' || state === 'REV'; }
   function active() { return desktop.matches && !reduced; }
-  function gateY() { return hero.offsetHeight; }                      // scroll position at which the white page fills the screen
+  // Scroll position at which the page rests: the white page is fully in view. When it is a little taller than the screen that is
+  // where its bottom edge meets the bottom of the screen (the point where the black footer starts to slide over it), not where its top does.
+  function gateY() {
+    var extra = Math.max(0, Math.min(section.offsetHeight - window.innerHeight, 120));
+    return hero.offsetHeight + extra;
+  }
   // textreveal.js splits the headline into words; with "reduce motion" it does not run, so do it here (same markup, nothing hidden).
   function ensureWords() {
     if (title.querySelector('.tw-word')) return;
@@ -126,10 +131,15 @@
     return { list: list, top: tRect.top - sRect.top, lineH: lineH };
   }
 
-  // Top of the machine block (under the one-line headline), room for it in the page, and where the photo waits.
+  // Top of the machine block, room for it in the page, and where the photo waits.
+  // The machine description sits at exactly the height of the original paragraph; only the machine name is added, just above it.
   function layout(info) {
-    var gap = Math.max(56, Math.min(96, window.innerWidth * 0.06));
-    var top = info.top + info.lineH + gap;
+    var firstText = cols.querySelector('.sec-text');
+    var textTop = cols.offsetTop + (firstText.getBoundingClientRect().top - cols.getBoundingClientRect().top);   // from the top of the page, whatever transform is on
+    machine.style.setProperty('--am-top', '0px');
+    var offset = machine.querySelector('.am-text').offsetTop;       // from the top of the block (the machine name) to the description
+    var minTop = info.top + info.lineH + 40;                        // never closer than 40px to the one-line headline
+    var top = Math.max(textTop - offset, minTop);
     machine.style.setProperty('--am-top', top.toFixed(1) + 'px');
     var need = top + machine.offsetHeight + Math.max(56, window.innerWidth * 0.06);
     section.style.minHeight = need > window.innerHeight ? Math.ceil(need) + 'px' : '';
