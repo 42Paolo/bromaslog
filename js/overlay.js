@@ -9,7 +9,7 @@
   'use strict';
   var white = document.getElementById('chi-siamo');
   var black = document.getElementById('portfolio');
-  if (!white || !black) return;
+  if (!white) return;               // the black page may be switched off: the white page still needs its sticky position
 
   var params = new URLSearchParams(window.location.search);
   var reduced = params.get('motion') === 'reduced' ||
@@ -22,7 +22,7 @@
   }
 
   function cover() {
-    if (reduced) return;
+    if (reduced || !black) return;
     var h = window.innerHeight;
     var t = black.getBoundingClientRect().top;                          // distance of the black page from the top of the screen
     var base = Math.min(h, white.getBoundingClientRect().bottom);       // it starts covering when it reaches the white page's bottom edge

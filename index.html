@@ -13,7 +13,7 @@
   <link rel="preload" href="assets/fonts/ibm-plex-mono-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" as="image" href="assets/bg-video-poster.jpg" fetchpriority="high">
   <link rel="stylesheet" href="css/preloader.css?v=20261150">
-  <link rel="stylesheet" href="css/site.css?v=20261153">
+  <link rel="stylesheet" href="css/site.css?v=20261161">
   <link rel="stylesheet" href="css/contact.css?v=20261150">
 </head>
 <body id="top">
@@ -51,7 +51,9 @@
           </button>
           <span class="nav-sep" aria-hidden="true"></span>
           <a href="#chi-siamo" data-i18n="nav.about">Chi siamo</a>
+          <!-- Portfolio (off for now)
           <a href="#portfolio" data-i18n="nav.portfolio">Portfolio</a>
+          -->
           <a href="#contact" class="is-cta" id="contact-trigger" aria-haspopup="dialog" aria-expanded="false" aria-controls="contact-panel" data-i18n="nav.contact">Contatti</a>
         </nav>
 
@@ -167,8 +169,8 @@
       </div>
 
       <!-- Second state of this page (js/aboutmorph.js): the TEXY TRJ W machine. Hidden from everyone (and from assistive tech) until it is shown. -->
-      <div class="about-machine" aria-hidden="true" inert>
-        <div class="am-media"><img class="am-img" src="assets/texy-trj-w.webp" width="1200" height="934" alt="" data-i18n-attr="alt:texy.alt" decoding="async"></div>
+      <div class="about-machine" aria-hidden="true">
+        <div class="am-media"><img class="am-img" src="assets/texy-trj-w-3d.webp" width="1400" height="783" alt="" data-i18n-attr="alt:texy.alt" decoding="async"></div>
         <div class="am-copy">
           <h3 class="am-title">TEXY TRJ W</h3>
           <p class="am-text" data-i18n="texy.p">Nel panorama delle applicazioni pratiche, la TEXY TRJ W si distingue come un’avanguardia tecnologica nella tessitura triassiale, offrendo un’eccellenza senza precedenti nella produzione di tessuti in fibra di carbonio. Questi materiali, cuore dei compositi avanzati, si caratterizzano per una resistenza e una rigidità superiori, risultando indispensabili in ambiti dove le sollecitazioni meccaniche e strutturali sono critiche. Grazie a questa tecnologia, i tessuti prodotti eccellono sotto ogni aspetto, trovando impiego in settori che spaziano dall’aerospaziale all’automobilistico, fino alle applicazioni ingegneristiche più avanzate.</p>
@@ -177,6 +179,8 @@
       </div>
     </section>
 
+    <!-- Portfolio page ("Settori di applicazione"): switched off for now. To bring it back, remove the comment marks around this block
+         and around the Portfolio link in the menu. (The "Scopri la nostra tecnologia" links point to #portfolio.)
     <section class="site-section" id="portfolio" aria-labelledby="portfolio-title">
       <p class="sec-eyebrow" data-i18n="nav.portfolio" data-reveal>Portfolio</p>
       <h2 class="sec-title" id="portfolio-title" data-i18n="portfolio.title" data-reveal>Settori di applicazione</h2>
@@ -198,6 +202,7 @@
         </li>
       </ul>
     </section>
+    -->
 
     <footer class="site-footer">
       <span>© <span id="year">2026</span> Bromaslog</span>
@@ -211,8 +216,8 @@
   <script src="js/scroll.js?v=20261152"></script>
   <script src="js/header.js?v=20261150"></script>
   <script src="js/textreveal.js?v=20261150"></script>
-  <script src="js/overlay.js?v=20261150"></script>
-  <script src="js/aboutmorph.js?v=20261158"></script>
+  <script src="js/overlay.js?v=20261160"></script>
+  <script src="js/aboutmorph.js?v=20261160"></script>
   <script src="js/site.js?v=20261150"></script>
   <script src="js/i18n.js?v=20261153"></script>
   <script src="js/contact.js?v=20261150"></script>

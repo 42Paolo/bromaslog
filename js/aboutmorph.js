@@ -306,8 +306,8 @@
 
   function showState() {
     var final = state === 'FINAL';
-    if (final) { machine.removeAttribute('aria-hidden'); machine.removeAttribute('inert'); }
-    else { machine.setAttribute('aria-hidden', 'true'); machine.setAttribute('inert', ''); }
+    if (final) machine.removeAttribute('aria-hidden'); else machine.setAttribute('aria-hidden', 'true');
+    machine.classList.toggle('am-on', final);
     if (final) cols.setAttribute('aria-hidden', 'true'); else cols.removeAttribute('aria-hidden');
   }
 
@@ -478,7 +478,7 @@
     clearFx();
     state = 'INITIAL'; arrived = null;
     lock(false);
-    machine.removeAttribute('aria-hidden'); machine.removeAttribute('inert');
+    machine.removeAttribute('aria-hidden'); machine.classList.remove('am-on');
     // simple fade-up when it scrolls into view (nothing at all with reduced motion)
     if (reduced || !('IntersectionObserver' in window)) { machine.classList.remove('am-pre'); return; }
     if (io) io.disconnect();

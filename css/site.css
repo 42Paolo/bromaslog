@@ -415,7 +415,12 @@ html.lenis, html.lenis body { height: auto; }
    by the script from the one-line headline. The photo waits below the page, clipped out of sight; the text is hidden until shown.
    Phones: no cinematic transition, the block simply follows the text (photo above the description). */
 .about-machine { margin-top: 56px; display: flex; flex-direction: column; gap: 28px; }
-.am-img { display: block; width: 100%; height: auto; }
+.am-img { display: block; width: 100%; height: auto; mix-blend-mode: multiply;   /* the render has a white background: it melts into the white page */
+  -webkit-mask-image: linear-gradient(to bottom, #000 88%, transparent), linear-gradient(to right, transparent, #000 5%, #000 95%, transparent);
+  -webkit-mask-composite: source-in;
+  mask-image: linear-gradient(to bottom, #000 88%, transparent), linear-gradient(to right, transparent, #000 5%, #000 95%, transparent);
+  mask-composite: intersect;                 /* the soft floor of the render fades out at the edges, no hard cut */
+}
 .am-title { margin: 0; font: 400 24px / 1.2 var(--font-sans); letter-spacing: .15em; text-transform: uppercase; color: #111; }
 .am-text { margin: 18px 0 0; font: 400 16px / 1.6 var(--font-sans); color: #555; }
 .am-link { margin: 28px 0 0; }
@@ -431,10 +436,12 @@ html.lenis, html.lenis body { height: auto; }
     top: var(--am-top, 340px);
     margin: 0;
     display: grid;
-    grid-template-columns: 42% minmax(0, 1fr);
+    grid-template-columns: 48% minmax(0, 1fr);
     column-gap: clamp(32px, 3.5vw, 64px);
     align-items: start;
+    pointer-events: none;                 /* while it is hidden it must not catch the mouse wheel */
   }
+  .about-machine.am-on { pointer-events: auto; }
   .about-machine .am-media, .about-machine .am-copy { transition: none; }
   .about-machine .am-media { transform: translateY(120vh); will-change: transform; }
   .about-machine .am-copy { visibility: hidden; }
