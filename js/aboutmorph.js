@@ -34,8 +34,12 @@
   var machine2 = section && section.querySelector('.about-machine.am-second');
   var media2 = machine2 && machine2.querySelector('.am-media');
   var copy2 = machine2 && machine2.querySelector('.am-copy');
-  if (!gsap || !section || !hero || !title || !cols || !machine || !media || !copy || !machine2 || !media2 || !copy2) return;
-  var img = media.querySelector('.am-img'), img2 = media2.querySelector('.am-img');
+  var machine3 = section && section.querySelector('.about-machine.am-third');
+  var media3 = machine3 && machine3.querySelector('.am-media');
+  var copy3 = machine3 && machine3.querySelector('.am-copy');
+  if (!gsap || !section || !hero || !title || !cols || !machine || !media || !copy || !machine2 || !media2 || !copy2 || !machine3 || !media3 || !copy3) return;
+  var machines = [machine, machine2, machine3], medias = [media, media2, media3], copies = [copy, copy2, copy3];
+  var imgs = medias.map(function (m) { return m.querySelector('.am-img'); });
 
   var params = new URLSearchParams(window.location.search);
   var reduced = params.get('motion') === 'reduced' ||
@@ -50,26 +54,28 @@
   var CELL = 3;                 // size of the dissolve squares, in CSS px
   var DRIFT = 7;                // how far a square wanders, in CSS px
 
-  // INITIAL (company text) -> FWD -> FINAL (machine 1) -> FWD2 -> SECOND (machine 2), and the same way back (REV2, REV).
-  var state = 'INITIAL';        // INITIAL | FWD | FINAL | REV | FWD2 | SECOND | REV2
+  // INITIAL (company text) -> FWD -> FINAL (machine 1) -> FWD2 -> SECOND (machine 2) -> FWD3 -> THIRD (machine 3), and the same way back (REV3, REV2, REV).
+  var state = 'INITIAL';        // INITIAL | FWD | FINAL | REV | FWD2 | SECOND | REV2 | FWD3 | THIRD | REV3
   var arrived = null;           // 'down' | 'up': the page is held on the white page waiting for a scroll attempt
   var holdUntil = 0;
   var lastWheel = 0;
   var swallowTail = false;      // right after a release: ignore the rest of the gesture that was going on
   var lastY = window.pageYOffset;
   var touchY = null;
-  var tl = null, tl2 = null;
+  var tl = null, tlS = null, slideTw = null;     // tl: the first sequence; tlS: the carousel (one timeline, SLIDE seconds per step)
+  var SLIDE = 2.6;
   var dirty = false;            // a resize / language change came while the sequence was running
-  var fx = { old: 0, neu: 0, slide: 0 };  // progress of the square transitions, and of the slide from machine 1 to machine 2
+  var fx = { old: 0, neu: 0, s2: 0, s3: 0 };  // progress of the square transitions, and of the two carousel steps
 
-  function running() { return state === 'FWD' || state === 'REV' || state === 'FWD2' || state === 'REV2'; }
-  var STATES = ['INITIAL', 'FINAL', 'SECOND'];
+  function running() { return /^(FWD|REV)[23]?$/.test(state); }
+  var STATES = ['INITIAL', 'FINAL', 'SECOND', 'THIRD'];
   function stepOf() { return Math.max(0, STATES.indexOf(state)); }
   // where one more scroll attempt in this direction leads (null: nothing, the page just moves on)
   function nextState(down) {
     if (state === 'INITIAL') return down ? 'FWD' : null;
     if (state === 'FINAL') return down ? 'FWD2' : 'REV';
-    if (state === 'SECOND') return down ? null : 'REV2';
+    if (state === 'SECOND') return down ? 'FWD3' : 'REV2';
+    if (state === 'THIRD') return down ? null : 'REV3';
     return null;
   }
   function active() { return desktop.matches && !reduced; }
@@ -161,13 +167,16 @@
     var minTop = info.top + info.lineH + 40;                        // never closer than 40px to the one-line headline
     var top = Math.max(textTop - offset, minTop);
     machine.style.setProperty('--am-top', top.toFixed(1) + 'px');
-    machine2.style.setProperty('--am-top', top.toFixed(1) + 'px');
-    copy2.style.marginTop = '0px';
-    var offset2 = machine2.querySelector('.am-text').offsetTop;
-    var shift = (top + offset) - (top + offset2);                   // = offset - offset2 (a longer name moves up, a shorter one down)
-    copy2.style.marginTop = shift.toFixed(1) + 'px';
-    var h2 = Math.max(machine2.offsetHeight, copy2.offsetHeight + shift);
-    var need = top + Math.max(machine.offsetHeight, h2) + Math.max(56, window.innerWidth * 0.06);
+    var h = 0;
+    [[machine2, copy2], [machine3, copy3]].forEach(function (pair) {   // the other machines: same photo slot, text shifted so that the description is at that same height
+      var m = pair[0], c = pair[1];
+      m.style.setProperty('--am-top', top.toFixed(1) + 'px');
+      c.style.marginTop = '0px';
+      var shift = offset - m.querySelector('.am-text').offsetTop;       // a longer name moves up, a shorter one down
+      c.style.marginTop = shift.toFixed(1) + 'px';
+      h = Math.max(h, m.offsetHeight, c.offsetHeight + shift);
+    });
+    var need = top + Math.max(machine.offsetHeight, h) + Math.max(56, window.innerWidth * 0.06);
     section.style.minHeight = need > window.innerHeight ? Math.ceil(need) + 'px' : '';
     return section.offsetHeight - top + 24;                      // how far below its place the photo starts: outside the page
   }
@@ -307,8 +316,9 @@
   function render() {
     var o = fx.old, n = fx.neu;
     cols.style.visibility = o <= 0 ? '' : 'hidden';
-    copy.style.visibility = (n >= 0.98 && fx.slide < 1) ? 'visible' : 'hidden';
-    copy2.style.visibility = fx.slide > 0 ? 'visible' : 'hidden';
+    copy.style.visibility = (n >= 0.98 && fx.s2 < 1) ? 'visible' : 'hidden';
+    copy2.style.visibility = (fx.s2 > 0 && fx.s3 < 1) ? 'visible' : 'hidden';
+    copy3.style.visibility = fx.s3 > 0 ? 'visible' : 'hidden';
     var drawing = canvas && fxOld && fxNew && ((o > 0 && o < 1) || (n > 0 && n < 1));
     if (!drawing) { clearFx(); return; }
     canvas.style.display = 'block';
@@ -324,7 +334,8 @@
 
   function killTl() {
     if (tl) { tl.kill(); tl = null; }
-    if (tl2) { tl2.kill(); tl2 = null; }
+    if (slideTw) { slideTw.kill(); slideTw = null; }
+    if (tlS) { tlS.kill(); tlS = null; }
   }
 
   function build() {
@@ -334,13 +345,14 @@
     if (!info) return false;
     var dy = layout(info);
     computeGate();
-    var kids1 = Array.prototype.slice.call(copy.children), kids2 = Array.prototype.slice.call(copy2.children);
-    gsap.set(media, { x: 0, y: dy });
-    gsap.set(img, { x: 0 }); gsap.set(kids1, { x: 0, opacity: 1 });
-    // machine 2 waits beyond the right edge of the page
+    var kids = copies.map(function (c) { return Array.prototype.slice.call(c.children); });
     var left = machine.offsetLeft + media.offsetLeft;
-    gsap.set(media2, { x: section.clientWidth - left, y: 0 });
-    gsap.set(img2, { x: 140 }); gsap.set(kids2, { x: 70, opacity: 0 });
+    gsap.set(media, { x: 0, y: dy });
+    gsap.set(imgs[0], { x: 0 }); gsap.set(kids[0], { x: 0, opacity: 1 });
+    for (var k = 1; k < 3; k++) {                                                    // the other machines wait beyond the right edge of the page
+      gsap.set(medias[k], { x: section.clientWidth - left, y: 0 });
+      gsap.set(imgs[k], { x: 140 }); gsap.set(kids[k], { x: 70, opacity: 0 });
+    }
 
     tl = gsap.timeline({ paused: true, onUpdate: render, onComplete: onForwardDone, onReverseComplete: onReverseDone });
     info.list.forEach(function (d, i) {                                              // headline: three lines -> one line
@@ -351,38 +363,45 @@
     tl.to(fx, { neu: 1, duration: 0.9, ease: 'power1.inOut' }, 1.95);                // machine text assembles
     tl.to({}, { duration: 0.1 }, 2.85);                                              // settle
 
-    // Carousel: machine 1 slides out to the left, machine 2 comes in from the right (photos with a little depth between them,
-    // the text lines follow one after the other).
+    // Carousel, one timeline for both steps (SLIDE seconds each): the current machine slides out to the left, the next comes in from the
+    // right (photos with a little depth between them, the text lines follow one after the other). The text of the machine that leaves
+    // is gone before the next photo reaches its column, and the new text only appears once that photo has cleared its column.
     var out = left + media.offsetWidth + 60;
-    tl2 = gsap.timeline({ paused: true, onUpdate: render, onComplete: onForward2Done, onReverseComplete: onReverse2Done });
-    tl2.to(media, { x: -out, duration: 1.6, ease: 'power3.inOut' }, 0);
-    tl2.to(img, { x: -110, duration: 1.6, ease: 'power3.inOut' }, 0);
-    tl2.to(media2, { x: 0, duration: 1.6, ease: 'power3.inOut' }, 0.1);
-    tl2.to(img2, { x: 0, duration: 1.6, ease: 'power3.inOut' }, 0.1);
-    // the text of machine 1 is gone before photo 2 reaches its column, and the text of machine 2 only appears once photo 2 has cleared its column
-    tl2.to(kids1, { x: -60, opacity: 0, duration: 0.35, ease: 'power2.in', stagger: 0.03 }, 0);
-    tl2.to(kids2, { x: 0, opacity: 1, duration: 0.8, ease: 'power3.out', stagger: 0.06 }, 1.45);
-    tl2.to(fx, { slide: 1, duration: 1.7, ease: 'none' }, 0);
-    tl2.to({}, { duration: 0.05 }, 2.5);                                            // settle
+    var E = 'power3.inOut', NI = { immediateRender: false };
+    tlS = gsap.timeline({ paused: true, onUpdate: render });
+    function step(t0, a, b, key) {
+      tlS.fromTo(medias[a], { x: 0 }, Object.assign({ x: -out, duration: 1.6, ease: E }, NI), t0);
+      tlS.fromTo(imgs[a], { x: 0 }, Object.assign({ x: -110, duration: 1.6, ease: E }, NI), t0);
+      tlS.fromTo(medias[b], { x: section.clientWidth - left }, Object.assign({ x: 0, duration: 1.6, ease: E }, NI), t0 + 0.1);
+      tlS.fromTo(imgs[b], { x: 140 }, Object.assign({ x: 0, duration: 1.6, ease: E }, NI), t0 + 0.1);
+      tlS.fromTo(kids[a], { x: 0, opacity: 1 }, Object.assign({ x: -60, opacity: 0, duration: 0.35, ease: 'power2.in', stagger: 0.03 }, NI), t0);
+      tlS.fromTo(kids[b], { x: 70, opacity: 0 }, Object.assign({ x: 0, opacity: 1, duration: 0.8, ease: 'power3.out', stagger: 0.06 }, NI), t0 + 1.45);
+      var from = {}; from[key] = 0;
+      var to = { duration: 1.7, ease: 'none' }; to[key] = 1;
+      tlS.fromTo(fx, from, Object.assign(to, NI), t0);
+    }
+    step(0, 0, 1, 's2');
+    step(SLIDE, 1, 2, 's3');
+    tlS.to({}, { duration: 0.05 }, 2 * SLIDE);                                      // settle (the timeline reaches the end of step 2)
     return true;
   }
 
   function showState() {
-    var s1 = state === 'FINAL', s2 = state === 'SECOND', final = s1 || s2 || state === 'FWD2' || state === 'REV2';
-    if (s1) machine.removeAttribute('aria-hidden'); else machine.setAttribute('aria-hidden', 'true');
-    if (s2) machine2.removeAttribute('aria-hidden'); else machine2.setAttribute('aria-hidden', 'true');
-    machine.classList.toggle('am-on', s1);
-    machine2.classList.toggle('am-on', s2);
-    if (final) cols.setAttribute('aria-hidden', 'true'); else cols.removeAttribute('aria-hidden');
+    var shown = STATES.indexOf(state) - 1;                       // which machine is at rest on the page (-1: none)
+    machines.forEach(function (m, i) {
+      if (i === shown) m.removeAttribute('aria-hidden'); else m.setAttribute('aria-hidden', 'true');
+      m.classList.toggle('am-on', i === shown);
+    });
+    if (shown >= 0 || /^(FWD|REV)[23]$/.test(state)) cols.setAttribute('aria-hidden', 'true'); else cols.removeAttribute('aria-hidden');
   }
 
   // puts the timelines on the frames that match the current (resting) state
   function applyState() {
     var step = stepOf();
     fx.old = fx.neu = step >= 1 ? 1 : 0;
-    fx.slide = step >= 2 ? 1 : 0;
+    fx.s2 = step >= 2 ? 1 : 0; fx.s3 = step >= 3 ? 1 : 0;
     tl.progress(step >= 1 ? 1 : 0, true);
-    tl2.progress(step >= 2 ? 1 : 0, true);
+    tlS.time(step <= 1 ? 0 : (step - 1) * SLIDE, true);
     render();
     showState();
   }
@@ -433,6 +452,8 @@
   }
   function onForwardDone() { state = 'FINAL'; afterStep(true); }
   function onForward2Done() { state = 'SECOND'; afterStep(true); }
+  function onForward3Done() { state = 'THIRD'; afterStep(true); }
+  function onReverse3Done() { state = 'SECOND'; afterStep(false); }
   function onReverse2Done() { state = 'FINAL'; afterStep(false); }
   function onReverseDone() { state = 'INITIAL'; afterStep(false); }
 
@@ -444,8 +465,10 @@
     state = next;
     if (next === 'FWD') tl.timeScale(1).play(0);
     else if (next === 'REV') tl.timeScale(REVERSE_SPEED).reverse(tl.duration());
-    else if (next === 'FWD2') tl2.timeScale(1).play(0);
-    else if (next === 'REV2') tl2.timeScale(1.3).reverse(tl2.duration());
+    else {                                                           // a carousel step: the playhead of the carousel timeline travels between the two times
+      var go = { FWD2: [0, SLIDE, onForward2Done, 1], REV2: [SLIDE, 0, onReverse2Done, 1.3], FWD3: [SLIDE, 2 * SLIDE, onForward3Done, 1], REV3: [2 * SLIDE, SLIDE, onReverse3Done, 1.3] }[next];
+      slideTw = tlS.tweenFromTo(go[0], go[1], { duration: SLIDE / go[3], ease: 'none', onComplete: go[2] });
+    }
   }
 
   // straight to a state, no sequence and no hold
@@ -463,7 +486,7 @@
     if (running() || arrived) clampToGate();
     // The page rests on the gate whenever there is a step in the direction the visitor goes: arriving at it, or leaving it from where it
     // stopped (the step before may have ended right here), either way one scroll attempt has to be made to go on.
-    else if (state !== 'SECOND' && lastY <= g + 0.5 && y > lastY && y >= g - 0.5) arrive('down');   // going down through the gate
+    else if (state !== 'THIRD' && lastY <= g + 0.5 && y > lastY && y >= g - 0.5) arrive('down');   // going down through the gate
     else if (state !== 'INITIAL' && lastY >= g - 0.5 && y < lastY && y <= g + 0.5) arrive('up');    // going up through the gate
     if (!running() && !arrived && state !== 'INITIAL' && y < lastY && y < g - 0.85 * window.innerHeight) jump(0);   // far back up (link): starts over
     lastY = window.pageYOffset;
@@ -544,7 +567,7 @@
     var target = id === 'top' ? hero : (id && document.getElementById(id));
     if (!target || target === section) return;
     var below = target.getBoundingClientRect().top + window.pageYOffset > section.offsetTop;
-    if (below && state !== 'SECOND') jump(2);
+    if (below && state !== 'THIRD') jump(3);
     else if (!below && state !== 'INITIAL') jump(0);
   }, true);
 
@@ -559,7 +582,7 @@
     killTl();
     wordsOf().forEach(function (w) { gsap.set(w, { clearProps: 'transform' }); });
     section.classList.add('am-flat');
-    [machine, machine2].forEach(function (m) {
+    machines.forEach(function (m) {
       gsap.set(m.querySelector('.am-media'), { clearProps: 'transform' });
       gsap.set(m.querySelector('.am-img'), { clearProps: 'transform' });
       gsap.set(m.querySelector('.am-copy').children, { clearProps: 'transform,opacity' });
@@ -575,18 +598,18 @@
     lock(false);
     // simple fade-up when they scroll into view (nothing at all with reduced motion)
     if (io) { io.disconnect(); io = null; }
-    if (reduced || !('IntersectionObserver' in window)) { machine.classList.remove('am-pre'); machine2.classList.remove('am-pre'); return; }
-    machine.classList.add('am-pre'); machine2.classList.add('am-pre');
+    if (reduced || !('IntersectionObserver' in window)) { machines.forEach(function (m) { m.classList.remove('am-pre'); }); return; }
+    machines.forEach(function (m) { m.classList.add('am-pre'); });
     io = new IntersectionObserver(function (entries) {
       entries.forEach(function (e) { if (e.isIntersecting) { e.target.classList.remove('am-pre'); io.unobserve(e.target); } });
     }, { rootMargin: '0px 0px -12% 0px' });
-    io.observe(machine); io.observe(machine2);
+    machines.forEach(function (m) { io.observe(m); });
   }
 
   function toDesktop() {
     if (io) { io.disconnect(); io = null; }
     section.classList.remove('am-flat');
-    machine.classList.remove('am-pre'); machine2.classList.remove('am-pre');
+    machines.forEach(function (m) { m.classList.remove('am-pre'); });
     rebuild();
   }
 
@@ -616,7 +639,7 @@
   ready.then(function () {
     window.setTimeout(function () {
       if (flat()) { toFlat(); return; }
-      if (window.pageYOffset > gateY() + 5) state = 'SECOND';              // opened (or reloaded) already below the white page
+      if (window.pageYOffset > gateY() + 5) state = 'THIRD';              // opened (or reloaded) already below the white page
       rebuild();
       lastY = window.pageYOffset;
       onScroll();
