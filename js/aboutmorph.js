@@ -414,11 +414,13 @@
     lock(false);
   }
 
-  // a step has ended: if there is more in the direction the visitor was going the page keeps resting here, otherwise it lets go
+  // A step has ended: the page keeps resting here, whichever way the visitor is going. The next gesture either starts the next step
+  // or, when there is none that way (the first text going up, the last machine going down), lets the page move on.
+  // So the visitor can never skip over a step, in either direction.
   function afterStep(down) {
     showState();
-    if (nextState(down)) { arrived = down ? 'down' : 'up'; holdUntil = Date.now() + HOLD; swallowTail = true; }
-    else release();
+    arrived = down ? 'down' : 'up';
+    holdUntil = Date.now() + HOLD;
     if (dirty) { dirty = false; rebuild(); }
   }
   function onForwardDone() { state = 'FINAL'; afterStep(true); }
@@ -451,8 +453,10 @@
     if (!active() || !tl) return;
     var y = window.pageYOffset, g = gateY();
     if (running() || arrived) clampToGate();
-    else if (state !== 'SECOND' && lastY < g - 0.5 && y >= g - 0.5) arrive('down');           // reached the white page going down
-    else if (state !== 'INITIAL' && lastY > g + 0.5 && y <= g + 0.5) arrive('up');            // came back up to it
+    // The page rests on the gate whenever there is a step in the direction the visitor goes: arriving at it, or leaving it from where it
+    // stopped (the step before may have ended right here), either way one scroll attempt has to be made to go on.
+    else if (state !== 'SECOND' && lastY <= g + 0.5 && y > lastY && y >= g - 0.5) arrive('down');   // going down through the gate
+    else if (state !== 'INITIAL' && lastY >= g - 0.5 && y < lastY && y <= g + 0.5) arrive('up');    // going up through the gate
     if (!running() && !arrived && state !== 'INITIAL' && y < lastY && y < g - 0.85 * window.innerHeight) jump(0);   // far back up (link): starts over
     lastY = window.pageYOffset;
   }
