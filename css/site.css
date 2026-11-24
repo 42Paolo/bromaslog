@@ -458,22 +458,31 @@ html.is-about-hold { scrollbar-gutter: stable; }
 .site-footer { z-index: 2; background: #000; }
 
 /* ---------- last page: "La nostra visione" ----------
-   Black page that rises over the white one (js/overlay.js). Taller than the screen, so it scrolls; the text is still to come. */
-#visione {
-  z-index: 2;
-  background: #000;
-  min-height: 200vh;
-  min-height: 200svh;
-  padding-top: calc(150 * var(--vr));
+   Black page that rises over the white one (js/overlay.js). Live (js/vision.js adds .vision-live): a tall section whose stage is held
+   on screen while the scroll paints the words. Without JavaScript, or with "reduce motion", it is a plain black screen with the text shown. */
+#visione { z-index: 2; padding: 0; background: #000; color: #F2F0EB; }
+.vision-sr { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.vision-stage {
+  min-height: 100vh; min-height: 100svh;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: calc(80 * var(--vr));
+  padding: calc(120 * var(--vr)) 5vw;
+  text-align: center;
+  font-weight: 500; letter-spacing: -.035em;
 }
-@media (min-width: 768px) {
-  #visione {
-    padding-left: calc((100vw - min(90vw, 1500px)) / 2 + 25px);
-    padding-right: calc((100vw - min(90vw, 1500px)) / 2 + 25px);
-  }
-}
-.vision-title { margin: 0; max-width: 12ch; font-weight: 500; font-size: calc(96 * var(--vr)); line-height: .98; letter-spacing: -.035em; }
+.v-triad { margin: 0; display: flex; flex-wrap: wrap; justify-content: center; column-gap: .34em; font-size: min(6.6vw, 150px); line-height: 1.05; }
+.v-line { margin: 0; max-width: 16em; font-size: clamp(30px, 4.6vw, 86px); line-height: 1.12; }
+.v-word { white-space: nowrap; }
+.v-lw { display: inline-block; white-space: nowrap; }
+.v-c { display: inline-block; }
+
+#visione.vision-live { height: calc(var(--vision-total, 750) * 1vh); height: calc(var(--vision-total, 750) * 1svh); }
+.vision-live .vision-stage { position: sticky; top: 0; height: 100vh; height: 100svh; min-height: 0; display: grid; place-items: center; padding: 0 5vw; }
+.vision-live .v-triad, .vision-live .v-line { grid-area: 1 / 1; }
+.vision-live .v-c { color: transparent; }
+.vision-live .v-triad { will-change: transform; }
+
 @media (max-width: 767px) {
-  #visione { padding-top: calc(110 * var(--vr)); }
-  .vision-title { font-size: calc(48 * var(--vr)); }
+  .v-triad { flex-direction: column; align-items: center; font-size: 17vw; column-gap: 0; }
+  .v-line { font-size: 9.4vw; max-width: 90vw; }
 }
