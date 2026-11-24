@@ -429,7 +429,7 @@ html.lenis, html.lenis body { height: auto; }
 
 @media (min-width: 768px) {
   #chi-siamo { overflow: clip; }
-  .about-machine {
+  #chi-siamo:not(.am-flat) .about-machine {
     position: absolute;
     left: calc((100vw - min(90vw, 1500px)) / 2 + 25px);
     right: calc((100vw - min(90vw, 1500px)) / 2 + 25px);
@@ -441,14 +441,15 @@ html.lenis, html.lenis body { height: auto; }
     align-items: start;
     pointer-events: none;                 /* while it is hidden it must not catch the mouse wheel */
   }
-  .about-machine.am-on { pointer-events: auto; }
-  .about-machine .am-media, .about-machine .am-copy { transition: none; }
-  .about-machine .am-media { transform: translateY(120vh); will-change: transform; }
-  .about-machine .am-copy { visibility: hidden; }
-  .am-title { font-size: clamp(24px, 2.05vw, 36px); }
-  .am-text { margin-top: clamp(24px, 2.2vw, 34px); font-size: clamp(15px, 1.05vw, 17px); line-height: 1.6; }
-  .am-link { margin-top: clamp(30px, 3vw, 44px); }
+  #chi-siamo:not(.am-flat) .about-machine.am-on { pointer-events: auto; }
+  #chi-siamo:not(.am-flat) .about-machine .am-media, #chi-siamo:not(.am-flat) .about-machine .am-copy { transition: none; }
+  #chi-siamo:not(.am-flat) .about-machine .am-media { transform: translateY(120vh); will-change: transform; }
+  #chi-siamo:not(.am-flat) .about-machine .am-copy { visibility: hidden; }
+  #chi-siamo:not(.am-flat) .am-title { font-size: clamp(24px, 2.05vw, 36px); }
+  #chi-siamo:not(.am-flat) .am-text { margin-top: clamp(24px, 2.2vw, 34px); font-size: clamp(15px, 1.05vw, 17px); line-height: 1.6; }
+  #chi-siamo:not(.am-flat) .am-link { margin-top: clamp(30px, 3vw, 44px); }
 }
+.am-text + .am-text { margin-top: 16px !important; }   /* machine 2 has three short paragraphs */
 .am-fx { position: absolute; z-index: 3; pointer-events: none; }
 html.is-about-hold { scrollbar-gutter: stable; }
 

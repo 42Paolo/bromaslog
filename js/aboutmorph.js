@@ -15,8 +15,10 @@
  *   - text swap: the old paragraphs dissolve into small squares and the new text re-assembles from squares. Both are drawn on one small
  *     canvas laid over the text (a few thousand squares, no extra DOM); the real text stays in the HTML and is only shown when it is "on".
  *
- * Phones (< 768px): no sequence and no scroll lock, the machine block simply follows the text (photo above its description).
- * "Reduce motion": the page shows state B straight away (no sequence, no lock).
+ * A second step works the same way: one more scroll attempt slides machine 1 out to the left while machine 2 (EQU 8 creel) comes in from
+ * the right, like a carousel; scrolling back up reverses it.
+ *
+ * Phones (< 768px) and "reduce motion": no sequence and no scroll lock, the machine blocks simply follow the text (photo above its description).
  */
 (function () {
   'use strict';
@@ -26,10 +28,14 @@
   var hero = document.querySelector('.site-hero');
   var title = section && section.querySelector('.sec-title');
   var cols = section && section.querySelector('.sec-cols');
-  var machine = section && section.querySelector('.about-machine');
+  var machine = section && section.querySelector('.about-machine:not(.am-second)');
   var media = machine && machine.querySelector('.am-media');
   var copy = machine && machine.querySelector('.am-copy');
-  if (!gsap || !section || !hero || !title || !cols || !machine || !media || !copy) return;
+  var machine2 = section && section.querySelector('.about-machine.am-second');
+  var media2 = machine2 && machine2.querySelector('.am-media');
+  var copy2 = machine2 && machine2.querySelector('.am-copy');
+  if (!gsap || !section || !hero || !title || !cols || !machine || !media || !copy || !machine2 || !media2 || !copy2) return;
+  var img = media.querySelector('.am-img'), img2 = media2.querySelector('.am-img');
 
   var params = new URLSearchParams(window.location.search);
   var reduced = params.get('motion') === 'reduced' ||
@@ -44,18 +50,28 @@
   var CELL = 3;                 // size of the dissolve squares, in CSS px
   var DRIFT = 7;                // how far a square wanders, in CSS px
 
-  var state = 'INITIAL';        // INITIAL | FWD | FINAL | REV
+  // INITIAL (company text) -> FWD -> FINAL (machine 1) -> FWD2 -> SECOND (machine 2), and the same way back (REV2, REV).
+  var state = 'INITIAL';        // INITIAL | FWD | FINAL | REV | FWD2 | SECOND | REV2
   var arrived = null;           // 'down' | 'up': the page is held on the white page waiting for a scroll attempt
   var holdUntil = 0;
   var lastWheel = 0;
   var swallowTail = false;      // right after a release: ignore the rest of the gesture that was going on
   var lastY = window.pageYOffset;
   var touchY = null;
-  var tl = null;
+  var tl = null, tl2 = null;
   var dirty = false;            // a resize / language change came while the sequence was running
-  var fx = { old: 0, neu: 0 };  // progress of the two square transitions
+  var fx = { old: 0, neu: 0, slide: 0 };  // progress of the square transitions, and of the slide from machine 1 to machine 2
 
-  function running() { return state === 'FWD' || state === 'REV'; }
+  function running() { return state === 'FWD' || state === 'REV' || state === 'FWD2' || state === 'REV2'; }
+  var STATES = ['INITIAL', 'FINAL', 'SECOND'];
+  function stepOf() { return Math.max(0, STATES.indexOf(state)); }
+  // where one more scroll attempt in this direction leads (null: nothing, the page just moves on)
+  function nextState(down) {
+    if (state === 'INITIAL') return down ? 'FWD' : null;
+    if (state === 'FINAL') return down ? 'FWD2' : 'REV';
+    if (state === 'SECOND') return down ? null : 'REV2';
+    return null;
+  }
   function active() { return desktop.matches && !reduced; }
   // Scroll position at which the page rests: the white page is fully in view. When it is a little taller than the screen that is
   // where its bottom edge meets the bottom of the screen (the point where the black footer starts to slide over it), not where its top does.
@@ -131,8 +147,9 @@
     return { list: list, top: tRect.top - sRect.top, lineH: lineH };
   }
 
-  // Top of the machine block, room for it in the page, and where the photo waits.
+  // Top of the machine blocks, room for them in the page, and where the photo waits.
   // The machine description sits at exactly the height of the original paragraph; only the machine name is added, just above it.
+  // (Machine 2 has the same photo slot; its text is shifted so that its description is at that same height too.)
   function layout(info) {
     var firstText = cols.querySelector('.sec-text');
     var textTop = cols.offsetTop + (firstText.getBoundingClientRect().top - cols.getBoundingClientRect().top);   // from the top of the page, whatever transform is on
@@ -141,7 +158,13 @@
     var minTop = info.top + info.lineH + 40;                        // never closer than 40px to the one-line headline
     var top = Math.max(textTop - offset, minTop);
     machine.style.setProperty('--am-top', top.toFixed(1) + 'px');
-    var need = top + machine.offsetHeight + Math.max(56, window.innerWidth * 0.06);
+    machine2.style.setProperty('--am-top', top.toFixed(1) + 'px');
+    copy2.style.marginTop = '0px';
+    var offset2 = machine2.querySelector('.am-text').offsetTop;
+    var shift = (top + offset) - (top + offset2);                   // = offset - offset2 (a longer name moves up, a shorter one down)
+    copy2.style.marginTop = shift.toFixed(1) + 'px';
+    var h2 = Math.max(machine2.offsetHeight, copy2.offsetHeight + shift);
+    var need = top + Math.max(machine.offsetHeight, h2) + Math.max(56, window.innerWidth * 0.06);
     section.style.minHeight = need > window.innerHeight ? Math.ceil(need) + 'px' : '';
     return section.offsetHeight - top + 24;                      // how far below its place the photo starts: outside the page
   }
@@ -279,7 +302,8 @@
   function render() {
     var o = fx.old, n = fx.neu;
     cols.style.visibility = o <= 0 ? '' : 'hidden';
-    copy.style.visibility = n >= 0.98 ? 'visible' : 'hidden';
+    copy.style.visibility = (n >= 0.98 && fx.slide < 1) ? 'visible' : 'hidden';
+    copy2.style.visibility = fx.slide > 0 ? 'visible' : 'hidden';
     var drawing = canvas && fxOld && fxNew && ((o > 0 && o < 1) || (n > 0 && n < 1));
     if (!drawing) { clearFx(); return; }
     canvas.style.display = 'block';
@@ -295,6 +319,7 @@
 
   function killTl() {
     if (tl) { tl.kill(); tl = null; }
+    if (tl2) { tl2.kill(); tl2 = null; }
   }
 
   function build() {
@@ -302,7 +327,14 @@
     var info = targets();
     if (!info) return false;
     var dy = layout(info);
-    gsap.set(media, { y: dy });
+    var kids1 = Array.prototype.slice.call(copy.children), kids2 = Array.prototype.slice.call(copy2.children);
+    gsap.set(media, { x: 0, y: dy });
+    gsap.set(img, { x: 0 }); gsap.set(kids1, { x: 0, opacity: 1 });
+    // machine 2 waits beyond the right edge of the page
+    var left = machine.offsetLeft + media.offsetLeft;
+    gsap.set(media2, { x: section.clientWidth - left, y: 0 });
+    gsap.set(img2, { x: 140 }); gsap.set(kids2, { x: 70, opacity: 0 });
+
     tl = gsap.timeline({ paused: true, onUpdate: render, onComplete: onForwardDone, onReverseComplete: onReverseDone });
     info.list.forEach(function (d, i) {                                              // headline: three lines -> one line
       tl.to(d.el, { x: d.x, y: d.y, scale: d.scale, duration: 2.1, ease: 'power3.inOut' }, i * 0.06);
@@ -311,24 +343,45 @@
     tl.to(fx, { old: 1, duration: 0.85, ease: 'power1.inOut' }, 1.2);                // old text dissolves
     tl.to(fx, { neu: 1, duration: 0.9, ease: 'power1.inOut' }, 1.95);                // machine text assembles
     tl.to({}, { duration: 0.1 }, 2.85);                                              // settle
+
+    // Carousel: machine 1 slides out to the left, machine 2 comes in from the right (photos with a little depth between them,
+    // the text lines follow one after the other).
+    var out = left + media.offsetWidth + 60;
+    tl2 = gsap.timeline({ paused: true, onUpdate: render, onComplete: onForward2Done, onReverseComplete: onReverse2Done });
+    tl2.to(media, { x: -out, duration: 1.6, ease: 'power3.inOut' }, 0);
+    tl2.to(img, { x: -110, duration: 1.6, ease: 'power3.inOut' }, 0);
+    tl2.to(media2, { x: 0, duration: 1.6, ease: 'power3.inOut' }, 0.1);
+    tl2.to(img2, { x: 0, duration: 1.6, ease: 'power3.inOut' }, 0.1);
+    tl2.to(kids1, { x: -60, opacity: 0, duration: 0.6, ease: 'power2.in', stagger: 0.05 }, 0);
+    tl2.to(kids2, { x: 0, opacity: 1, duration: 0.9, ease: 'power3.out', stagger: 0.08 }, 0.7);
+    tl2.to(fx, { slide: 1, duration: 1.7, ease: 'none' }, 0);
     return true;
   }
 
   function showState() {
-    var final = state === 'FINAL';
-    if (final) machine.removeAttribute('aria-hidden'); else machine.setAttribute('aria-hidden', 'true');
-    machine.classList.toggle('am-on', final);
+    var s1 = state === 'FINAL', s2 = state === 'SECOND', final = s1 || s2 || state === 'FWD2' || state === 'REV2';
+    if (s1) machine.removeAttribute('aria-hidden'); else machine.setAttribute('aria-hidden', 'true');
+    if (s2) machine2.removeAttribute('aria-hidden'); else machine2.setAttribute('aria-hidden', 'true');
+    machine.classList.toggle('am-on', s1);
+    machine2.classList.toggle('am-on', s2);
     if (final) cols.setAttribute('aria-hidden', 'true'); else cols.removeAttribute('aria-hidden');
   }
 
-  // (Re)builds the timeline and puts it on the frame that matches the current state.
-  function rebuild() {
-    if (!build()) return;
-    var final = state === 'FINAL';
-    fx.old = fx.neu = final ? 1 : 0;
-    tl.progress(final ? 1 : 0, true);
+  // puts the timelines on the frames that match the current (resting) state
+  function applyState() {
+    var step = stepOf();
+    fx.old = fx.neu = step >= 1 ? 1 : 0;
+    fx.slide = step >= 2 ? 1 : 0;
+    tl.progress(step >= 1 ? 1 : 0, true);
+    tl2.progress(step >= 2 ? 1 : 0, true);
     render();
     showState();
+  }
+
+  // (Re)builds the timelines and applies the current state.
+  function rebuild() {
+    if (!build()) return;
+    applyState();
   }
 
   /* ======================================================================
@@ -359,27 +412,35 @@
     lock(false);
   }
 
-  function start(dir) {
+  // a step has ended: if there is more in the direction the visitor was going the page keeps resting here, otherwise it lets go
+  function afterStep(down) {
+    showState();
+    if (nextState(down)) { arrived = down ? 'down' : 'up'; holdUntil = Date.now() + HOLD; swallowTail = true; }
+    else release();
+    if (dirty) { dirty = false; rebuild(); }
+  }
+  function onForwardDone() { state = 'FINAL'; afterStep(true); }
+  function onForward2Done() { state = 'SECOND'; afterStep(true); }
+  function onReverse2Done() { state = 'FINAL'; afterStep(false); }
+  function onReverseDone() { state = 'INITIAL'; afterStep(false); }
+
+  function start(next) {
     if (!tl || running()) return;
     if (dirty) { dirty = false; rebuild(); }
     arrived = null;
-    prepareFx();
-    state = dir;
-    if (dir === 'FWD') tl.timeScale(1).play(0);
-    else tl.timeScale(REVERSE_SPEED).reverse(tl.duration());
+    if (next === 'FWD' || next === 'REV') prepareFx();
+    state = next;
+    if (next === 'FWD') tl.timeScale(1).play(0);
+    else if (next === 'REV') tl.timeScale(REVERSE_SPEED).reverse(tl.duration());
+    else if (next === 'FWD2') tl2.timeScale(1).play(0);
+    else if (next === 'REV2') tl2.timeScale(1.3).reverse(tl2.duration());
   }
 
-  function onForwardDone() { state = 'FINAL'; showState(); release(); if (dirty) { dirty = false; rebuild(); } }
-  function onReverseDone() { state = 'INITIAL'; showState(); release(); if (dirty) { dirty = false; rebuild(); } }
-
   // straight to a state, no sequence and no hold
-  function jump(final) {
+  function jump(step) {
     if (!tl) return;
-    state = final ? 'FINAL' : 'INITIAL';
-    fx.old = fx.neu = final ? 1 : 0;
-    tl.progress(final ? 1 : 0, true);
-    render();
-    showState();
+    state = STATES[step];
+    applyState();
     if (arrived || root.classList.contains('is-about-hold')) release();
     swallowTail = false;
   }
@@ -388,9 +449,9 @@
     if (!active() || !tl) return;
     var y = window.pageYOffset, g = gateY();
     if (running() || arrived) clampToGate();
-    else if (state === 'INITIAL' && lastY < g - 0.5 && y >= g - 0.5) arrive('down');          // reached the white page going down
-    else if (state === 'FINAL' && lastY > g + 0.5 && y <= g + 0.5) arrive('up');              // came back up to it
-    if (!running() && !arrived && state === 'FINAL' && y < lastY && y < g - 0.85 * window.innerHeight) jump(false);   // far back up (link): starts over
+    else if (state !== 'SECOND' && lastY < g - 0.5 && y >= g - 0.5) arrive('down');           // reached the white page going down
+    else if (state !== 'INITIAL' && lastY > g + 0.5 && y <= g + 0.5) arrive('up');            // came back up to it
+    if (!running() && !arrived && state !== 'INITIAL' && y < lastY && y < g - 0.85 * window.innerHeight) jump(0);   // far back up (link): starts over
     lastY = window.pageYOffset;
   }
 
@@ -399,10 +460,10 @@
     if (!active() || !tl) return;
     if (running()) { if (e && e.cancelable) e.preventDefault(); return; }
     if (!arrived) return;
-    var toward = (arrived === 'down') === down;
-    if (!toward) { arrived = null; lock(false); return; }          // the other way: let the page move again
+    var next = nextState(down);
+    if (!next) { arrived = null; lock(false); return; }            // nothing more that way: let the page move
     if (e && e.cancelable) e.preventDefault();
-    if (Date.now() >= holdUntil) start(arrived === 'down' ? 'FWD' : 'REV');
+    if (Date.now() >= holdUntil) start(next);
   }
 
   // Trackpads keep sending small wheel events for a second or more after the fingers have left (inertia), and a visitor often starts the
@@ -424,15 +485,16 @@
     }
     if (!arrived) return;
     var down = e.deltaY > 0;
-    if ((arrived === 'down') !== down) { attempt(down, e); return; }        // the other way: the page is let go
+    var next = nextState(down);
+    if (!next) { attempt(down, e); return; }                                // nothing more that way: the page is let go
     if (e.cancelable) e.preventDefault();
     if (abs < 6) return;
     if (now < holdUntil) {                                                  // a real new swipe during the rest is not lost: it starts when the rest is over
       if ((fresh || rising) && !pending) {
-        var dir = arrived;
+        var from = state;
         pending = window.setTimeout(function () {
           pending = 0;
-          if (arrived === dir && !running()) start(dir === 'down' ? 'FWD' : 'REV');
+          if (arrived && state === from && !running()) start(next);
         }, holdUntil - now + 20);
       }
       return;
@@ -468,41 +530,49 @@
     var target = id === 'top' ? hero : (id && document.getElementById(id));
     if (!target || target === section) return;
     var below = target.getBoundingClientRect().top + window.pageYOffset > section.offsetTop;
-    if (below && state === 'INITIAL') jump(true);
-    else if (!below && state === 'FINAL') jump(false);
+    if (below && state !== 'SECOND') jump(2);
+    else if (!below && state !== 'INITIAL') jump(0);
   }, true);
 
   /* ======================================================================
      Phones, reduced motion, resize, language
      ====================================================================== */
 
+  // Phones (and "reduce motion"): no sequence. Everything is simply laid out one after the other.
   var io = null;
-  function toPhone() {
+  function flat() { return !desktop.matches || reduced; }
+  function toFlat() {
     killTl();
     wordsOf().forEach(function (w) { gsap.set(w, { clearProps: 'transform' }); });
-    gsap.set(media, { clearProps: 'transform' });
-    cols.style.visibility = ''; copy.style.visibility = '';
+    section.classList.add('am-flat');
+    [machine, machine2].forEach(function (m) {
+      gsap.set(m.querySelector('.am-media'), { clearProps: 'transform' });
+      gsap.set(m.querySelector('.am-img'), { clearProps: 'transform' });
+      gsap.set(m.querySelector('.am-copy').children, { clearProps: 'transform,opacity' });
+      m.querySelector('.am-copy').style.visibility = ''; m.querySelector('.am-copy').style.marginTop = '';
+      m.style.removeProperty('--am-top');
+      m.removeAttribute('aria-hidden'); m.classList.remove('am-on');
+    });
+    cols.style.visibility = '';
     cols.removeAttribute('aria-hidden');
-    machine.style.removeProperty('--am-top');
     section.style.minHeight = '';
     clearFx();
     state = 'INITIAL'; arrived = null;
     lock(false);
-    machine.removeAttribute('aria-hidden'); machine.classList.remove('am-on');
-    // simple fade-up when it scrolls into view (nothing at all with reduced motion)
-    if (reduced || !('IntersectionObserver' in window)) { machine.classList.remove('am-pre'); return; }
-    if (io) io.disconnect();
-    machine.classList.add('am-pre');
+    // simple fade-up when they scroll into view (nothing at all with reduced motion)
+    if (io) { io.disconnect(); io = null; }
+    if (reduced || !('IntersectionObserver' in window)) { machine.classList.remove('am-pre'); machine2.classList.remove('am-pre'); return; }
+    machine.classList.add('am-pre'); machine2.classList.add('am-pre');
     io = new IntersectionObserver(function (entries) {
-      if (entries.some(function (e) { return e.isIntersecting; })) { machine.classList.remove('am-pre'); io.disconnect(); }
+      entries.forEach(function (e) { if (e.isIntersecting) { e.target.classList.remove('am-pre'); io.unobserve(e.target); } });
     }, { rootMargin: '0px 0px -12% 0px' });
-    io.observe(machine);
+    io.observe(machine); io.observe(machine2);
   }
 
   function toDesktop() {
     if (io) { io.disconnect(); io = null; }
-    machine.classList.remove('am-pre');
-    if (reduced) state = 'FINAL';
+    section.classList.remove('am-flat');
+    machine.classList.remove('am-pre'); machine2.classList.remove('am-pre');
     rebuild();
   }
 
@@ -511,7 +581,7 @@
     if (raf) return;
     raf = window.requestAnimationFrame(function () {
       raf = 0;
-      if (!desktop.matches) { toPhone(); return; }
+      if (flat()) { toFlat(); return; }
       if (running()) { dirty = true; return; }
       toDesktop();
     });
@@ -521,7 +591,7 @@
   // the language switch swaps the texts (and re-splits the headline: textreveal.js runs first)
   window.addEventListener('bromaslog:languagechange', function () {
     window.requestAnimationFrame(function () { window.requestAnimationFrame(function () {
-      if (!desktop.matches) return;
+      if (flat()) return;
       if (running()) { dirty = true; return; }
       rebuild();
     }); });
@@ -531,9 +601,8 @@
   var ready = document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve();
   ready.then(function () {
     window.setTimeout(function () {
-      if (!desktop.matches) { toPhone(); return; }
-      var deep = window.pageYOffset > gateY() + 5;                       // opened (or reloaded) already below the white page
-      if (reduced || deep) state = 'FINAL';
+      if (flat()) { toFlat(); return; }
+      if (window.pageYOffset > gateY() + 5) state = 'SECOND';              // opened (or reloaded) already below the white page
       rebuild();
       lastY = window.pageYOffset;
       onScroll();
