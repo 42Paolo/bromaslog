@@ -186,6 +186,7 @@ html.is-contact-open { overflow: hidden; }
 .contact-list .txt { display: grid; gap: calc(4 * var(--vr)); min-width: 0; }
 .contact-list .k { font: 400 calc(10 * var(--vr)) / 1 var(--font-mono); letter-spacing: .14em; text-transform: uppercase; color: rgba(242, 240, 235, .55); }
 .contact-list .v { font: 400 calc(16 * var(--vr)) / 1.3 var(--font-sans); color: var(--paper); }
+.contact-list .v2 { font-size: calc(13 * var(--vr)); color: rgba(242, 240, 235, .62); }   /* company data under the main office */
 .contact-list a.v:hover { text-decoration: underline; text-underline-offset: 3px; }
 
 @media (max-width: 767px) {
