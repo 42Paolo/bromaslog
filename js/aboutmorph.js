@@ -48,7 +48,7 @@
   var desktop = window.matchMedia ? window.matchMedia('(min-width: 768px)') : { matches: true };
   var lenis = window.bromaslogLenis || null;
 
-  var HOLD = 500;               // ms the page rests on arrival before a scroll attempt counts
+  var HOLD = 150;               // ms the page rests on arrival before a scroll attempt counts
   var FRESH_GAP = 100;          // ms of silence that make a wheel event a new gesture (not the tail of a trackpad flick)
   var REVERSE_SPEED = 2;        // the way back runs twice as fast
   var CELL = 3;                 // size of the dissolve squares, in CSS px
@@ -64,6 +64,8 @@
   var touchY = null;
   var tl = null, tlS = null, slideTw = null;     // tl: the first sequence; tlS: the carousel (one timeline, SLIDE seconds per step)
   var SLIDE = 2.6;
+  var CAROUSEL_SPEED = 2.4;      // the change between two machines runs 2.4x faster than the timeline's own seconds (about 1.1 s)
+  var CAROUSEL_BACK = 2.8;       // and a little faster on the way back (about 0.9 s)
   var dirty = false;            // a resize / language change came while the sequence was running
   var fx = { old: 0, neu: 0, s2: 0, s3: 0 };  // progress of the square transitions, and of the two carousel steps
 
@@ -471,7 +473,7 @@
     if (next === 'FWD') tl.timeScale(1).play(0);
     else if (next === 'REV') tl.timeScale(REVERSE_SPEED).reverse(tl.duration());
     else {                                                           // a carousel step: the playhead of the carousel timeline travels between the two times
-      var go = { FWD2: [0, SLIDE, onForward2Done, 1], REV2: [SLIDE, 0, onReverse2Done, 1.3], FWD3: [SLIDE, 2 * SLIDE, onForward3Done, 1], REV3: [2 * SLIDE, SLIDE, onReverse3Done, 1.3] }[next];
+      var go = { FWD2: [0, SLIDE, onForward2Done, CAROUSEL_SPEED], REV2: [SLIDE, 0, onReverse2Done, CAROUSEL_BACK], FWD3: [SLIDE, 2 * SLIDE, onForward3Done, CAROUSEL_SPEED], REV3: [2 * SLIDE, SLIDE, onReverse3Done, CAROUSEL_BACK] }[next];
       slideTw = tlS.tweenFromTo(go[0], go[1], { duration: SLIDE / go[3], ease: 'none', onComplete: go[2] });
     }
   }
