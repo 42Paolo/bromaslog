@@ -65,8 +65,8 @@
       micro: seconds('--dur-micro', 0.2),
       fast: seconds('--dur-fast', 0.35),
       base: seconds('--dur-base', 0.6),
-      primary: seconds('--dur-primary', 1),
-      scene: seconds('--dur-scene', 1.6)
+      primary: seconds('--dur-primary', 1.2),
+      scene: seconds('--dur-scene', 2)
     },
     ease: {
       out: curve('--ease-out', '0.2, 0.7, 0.2, 1'),

@@ -5,7 +5,7 @@
  *
  * It is a one-shot sequence started by a scroll attempt, NOT scrubbed: once started it runs at its own speed, and the page cannot move
  * on until it has finished. A small state machine drives it: INITIAL -> FWD -> FINAL -> REV -> INITIAL.
- *   - Scrolling DOWN past the page while in INITIAL plays the sequence forward (one scene: 1.6 s).
+ *   - Scrolling DOWN past the page while in INITIAL plays the sequence forward (one scene: the scene token).
  *   - Scrolling back UP past the page while in FINAL plays it backwards (quicker, like every exit: x 0.8 of the time).
  *   All times, curves and staggers come from the motion tokens (css/motion.css, js/motion.js).
  *   - Arriving on the page never starts anything by itself: the page rests there for a moment (the hold token) and a new scroll gesture is needed.
