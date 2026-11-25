@@ -337,6 +337,7 @@
     killTl();
     fxReady = false;
     shownKey = '';
+    fx.old = fx.neu = fx.s2 = fx.s3 = 0;               // a tween that is "to" a value starts from whatever the value is when it is first drawn: these must be 0 here, not what the last build left
     var info = targets();
     if (!info) return false;
     var dy = layout(info);
@@ -352,13 +353,16 @@
     // Eases are gentle (power2 / sine / none): the timelines follow the scroll, and a sharp ease would leave the start and the end of every
     // movement almost still and rush through the middle.
     var EM = 'power2.inOut';
+    // Every start value is written out (fromTo), never read from the page: the timeline is scrubbed back and forth, and after a rebuild the
+    // page may be in any state.
+    var NO = { immediateRender: false };
     tl = gsap.timeline({ paused: true });
     info.list.forEach(function (d, i) {                                              // headline: three lines -> one line
-      tl.to(d.el, { x: d.x, y: d.y, scale: d.scale, duration: 2.1, ease: EM }, i * 0.06);
+      tl.fromTo(d.el, { x: 0, y: 0, scale: 1 }, Object.assign({ x: d.x, y: d.y, scale: d.scale, duration: 2.1, ease: EM }, NO), i * 0.06);
     });
-    tl.to(media, { y: 0, duration: 2.6, ease: EM }, 0.2);                            // photo rises
-    tl.to(fx, { old: 1, duration: 0.85, ease: 'none' }, 1.2);                        // old text dissolves
-    tl.to(fx, { neu: 1, duration: 0.9, ease: 'none' }, 1.95);                        // machine text assembles
+    tl.fromTo(media, { y: dy }, Object.assign({ y: 0, duration: 2.6, ease: EM }, NO), 0.2);          // photo rises
+    tl.fromTo(fx, { old: 0 }, Object.assign({ old: 1, duration: 0.85, ease: 'none' }, NO), 1.2);     // old text dissolves
+    tl.fromTo(fx, { neu: 0 }, Object.assign({ neu: 1, duration: 0.9, ease: 'none' }, NO), 1.95);     // machine text assembles
     tl.to({}, { duration: 0.1 }, 2.85);                                              // settle
 
     // Carousel, one timeline for both steps (SLIDE seconds each): the current machine slides out to the left, the next comes in from the
