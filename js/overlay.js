@@ -1,12 +1,13 @@
 /*
- * Overlay transition between the second page (white) and the third page (black).
+ * How the second page (white) rises over the first one, and how the third page (black) rises over the white one.
  * - The white page is sticky: when its bottom reaches the bottom of the screen it stops, and the black page slides over it.
  *   (If the white page is taller than the screen, it sticks with its bottom edge at the bottom of the screen: --stick-top.)
  * - While the black page covers it, the white page darkens and its content drifts up a little (--cover: 0 -> 1).
- * - The black page does not rise as one straight edge: its right half rises with the scroll, and its left half starts a third of a screen
- *   lower and rises faster, so the two edges meet exactly when the page has covered the screen (the stepped rise of likova.space,
- *   measured on the live page: left edge = 1.33 x the height of the right edge above the bottom of the screen, linear in the scroll).
- *   It is a clip-path on the black page, updated from the scroll position.
+ * - Neither page rises as one straight edge. One half rises with the scroll; the other half starts a third of a screen lower and rises
+ *   faster, so the two edges meet exactly when the page has covered the screen (the stepped rise of likova.space, measured on the live
+ *   page: the lagging edge = 1.33 x the height of the leading edge above the bottom of the screen, linear in the scroll).
+ *   The black page: right half first. The white page: left half first (the other way round).
+ *   It is a clip-path on each page, updated from the scroll position, so it also runs backwards.
  * The sticky overlay itself is pure CSS and always on; the darkening/drift and the stepped rise are skipped with "reduce motion".
  */
 (function () {
@@ -25,19 +26,25 @@
     white.style.setProperty('--cover-shift', (-0.08 * window.innerHeight).toFixed(0) + 'px');
   }
 
-  var LAG = 0.33;                  // how much lower the left half starts, as a share of the distance the page still has to rise
-  var clip = '';
-  function split(t) {              // t: distance of the black page's top edge from the top of the screen
-    var y = Math.min(Math.max(t, 0), window.innerHeight) * LAG;   // the left half's top edge, below the page's own top edge (px)
-    var v = y > 0.5 ? 'polygon(0 ' + y.toFixed(1) + 'px, 50% ' + y.toFixed(1) + 'px, 50% 0, 100% 0, 100% 100%, 0 100%)' : '';
-    if (v !== clip) { clip = v; black.style.clipPath = v; }
+  var LAG = 0.33;                  // how much lower the lagging half starts, as a share of the distance the page still has to rise
+  // t: distance of the page's top edge from the top of the screen. The leading half's edge is the page's own top edge; the lagging half's
+  // edge is LAG x t below it, so it is at 1.33 x t from the top of the screen and meets the other one when t reaches 0.
+  function stepRise(el, t, leftLeads) {
+    var y = Math.min(Math.max(t, 0), window.innerHeight) * LAG;
+    var a = y.toFixed(1) + 'px';
+    var v = y <= 0.5 ? '' : leftLeads ?
+      'polygon(0 0, 50% 0, 50% ' + a + ', 100% ' + a + ', 100% 100%, 0 100%)' :
+      'polygon(0 ' + a + ', 50% ' + a + ', 50% 0, 100% 0, 100% 100%, 0 100%)';
+    if (v !== el._clip) { el._clip = v; el.style.clipPath = v; }
   }
 
   function cover() {
-    if (reduced || !black) return;
+    if (reduced) return;
     var h = window.innerHeight;
+    stepRise(white, white.getBoundingClientRect().top, true);           // the white page rises over the first screen: left half first
+    if (!black) return;
     var t = black.getBoundingClientRect().top;                          // distance of the black page from the top of the screen
-    split(t);
+    stepRise(black, t, false);                                          // the black page rises over the white one: right half first
     var base = Math.min(h, white.getBoundingClientRect().bottom);       // it starts covering when it reaches the white page's bottom edge
     var c = base <= 0 ? 1 : Math.min(1, Math.max(0, (base - t) / base));
     white.style.setProperty('--cover', c.toFixed(3));
