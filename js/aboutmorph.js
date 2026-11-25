@@ -53,6 +53,8 @@
   var HOLD = Math.round(M.hold * 1000);   // ms the page rests after a step before a scroll attempt counts
   var ARRIVE_REST = Math.round(M.delay.mid * 1000);   // ms the page rests when the visitor has just come onto it: long enough to be seen
   var FRESH_GAP = 100;          // ms of silence that make a wheel event a new gesture (not the tail of a trackpad flick)
+  var RETURN_PATIENCE = 500;    // ms: coming back onto the page, a scroll that keeps going is only held this long
+  var NEW_SWIPE_RISE = 30;      // how far (wheel delta) a new swipe has to climb above the slowest point of the one that is fading
   var REVERSE_SPEED = 1 / M.exitRatio;    // the way back is quicker, like every exit (x 0.8 of the time)
   var CELL = 3;                 // size of the dissolve squares, in CSS px
   var DRIFT = 7;                // how far a square wanders, in CSS px
@@ -63,9 +65,13 @@
   var holdUntil = 0;
   var lastWheel = 0;
   var swallowTail = false;      // right after a release: ignore the rest of the gesture that was going on
-  var needFresh = false;        // the visitor has just ARRIVED on the page (from above or below): the scroll that brought them can never start a step,
-                                // only a new gesture (after a pause in the wheel, a new press of a key, a new touch) can
+  var needFresh = false;        // the visitor has just ARRIVED on the page (from above or below): the scroll that brought them does not start a step,
+                                // only a new gesture can: a pause in the wheel, a new swipe on top of the old one (the wheel speeds up again), a new press of
+                                // a key, a new touch
+  var strictArrival = false;    // true for the very first arrival (from the top of the site onto the company text): the old scroll can never start anything.
+                                // Coming back (from the black page, or between machines) it only has to wait RETURN_PATIENCE: after that the visitor goes on
   var arrivedAt = 0, touchStartAt = 0;
+  var trough = Infinity;        // the lowest wheel speed seen since arriving: a new swipe is a clear rise above it
   var lastY = window.pageYOffset;
   var touchY = null;
   var tl = null, tlS = null, slideTw = null;     // tl: the first sequence; tlS: the carousel (one timeline, SLIDE seconds per step)
@@ -447,8 +453,10 @@
   function arrive(dir) {
     arrived = dir;
     needFresh = true;
+    strictArrival = dir === 'down' && state === 'INITIAL';       // the first time on the page: it has to be seen
+    trough = Infinity;
     arrivedAt = Date.now();
-    holdUntil = arrivedAt + ARRIVE_REST;
+    holdUntil = arrivedAt + (strictArrival ? ARRIVE_REST : HOLD);
     lock(true);
     clampToGate();
     window.requestAnimationFrame(function () { if (arrived && !running()) ensureFx(); });
@@ -546,7 +554,17 @@
     }
     if (!arrived) return;
     if (needFresh) {                                                        // just arrived with the scroll still going (a big flick, its inertia):
-      if (!fresh) { if (e.cancelable) e.preventDefault(); e.stopPropagation(); return; }   // nothing of it counts; a pause in the wheel ends it
+      var age = now - arrivedAt;
+      if (!fresh && (strictArrival || age < RETURN_PATIENCE)) {             // nothing of that scroll counts; it ends with a pause in the wheel,
+        var restOver = age >= (strictArrival ? ARRIVE_REST : HOLD);         // or, once the page has rested, with a new swipe: the speed climbs
+        var newSwipe = restOver && abs >= trough + NEW_SWIPE_RISE && abs >= trough * 1.8;   // well above the lowest point of the old one
+        if (!newSwipe) {                                                    // (a coasting trackpad only ever slows down)
+          trough = restOver ? Math.min(trough, abs) : abs;
+          if (e.cancelable) e.preventDefault();
+          e.stopPropagation();
+          return;
+        }
+      }
       needFresh = false;
     }
     var down = e.deltaY > 0;
@@ -573,7 +591,7 @@
     if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
     var down = e.key === 'ArrowDown' || e.key === 'PageDown' || e.key === 'End' || (e.key === ' ' && !e.shiftKey);
     var up = e.key === 'ArrowUp' || e.key === 'PageUp' || e.key === 'Home' || (e.key === ' ' && e.shiftKey);
-    if (arrived && needFresh && e.repeat && (down || up)) { e.preventDefault(); return; }   // a key held down while arriving does not count: a new press does
+    if (arrived && needFresh && e.repeat && (down || up) && (strictArrival || Date.now() - arrivedAt < RETURN_PATIENCE)) { e.preventDefault(); return; }   // a key held down while arriving does not count: a new press does
     if (down) attempt(true, e);
     else if (up) attempt(false, e);
   }, true);
@@ -581,7 +599,7 @@
   window.addEventListener('touchstart', function (e) { touchY = e.touches.length ? e.touches[0].clientY : null; touchStartAt = Date.now(); }, { passive: true, capture: true });
   window.addEventListener('touchmove', function (e) {
     if (touchY === null || !e.touches.length) return;
-    if (arrived && needFresh && touchStartAt < arrivedAt) { if (e.cancelable) e.preventDefault(); return; }   // the touch that brought the visitor here is over: a new one is needed
+    if (arrived && needFresh && touchStartAt < arrivedAt && (strictArrival || Date.now() - arrivedAt < RETURN_PATIENCE)) { if (e.cancelable) e.preventDefault(); return; }   // the touch that brought the visitor here is over: a new one is needed
     var dy = touchY - e.touches[0].clientY;                              // positive: finger moving up = scrolling down
     if (Math.abs(dy) < 12) return;
     touchY = e.touches[0].clientY;
