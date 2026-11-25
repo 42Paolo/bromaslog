@@ -444,9 +444,7 @@ html.lenis, html.lenis body { height: auto; }
 }
 .am-text + .am-text { margin-top: 16px !important; }   /* machine 2 has three short paragraphs */
 .am-fx { position: absolute; z-index: 3; pointer-events: none; }
-/* the scroll length of the white page (js/aboutmorph.js sets --about-run, in screens, and adds .is-live on desktop) */
-.about-runway { height: 0; }
-.about-runway.is-live { height: calc(var(--about-run, 505) * 1vh); height: calc(var(--about-run, 505) * 1svh); }
+html.is-about-hold { scrollbar-gutter: stable; }
 
 #portfolio {
   z-index: 2;

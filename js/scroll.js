@@ -27,9 +27,9 @@
     lenis = new window.Lenis({ autoRaf: true });          // = icomat: defaults, driven by its own requestAnimationFrame
     window.bromaslogLenis = lenis;
 
-    // No scrolling while the preloader is up or the contact panel is open.
+    // No scrolling while the preloader is up, the contact panel is open, or the About page holds the visitor (js/aboutmorph.js).
     var syncLock = function () {
-      if (root.classList.contains('is-loading') || root.classList.contains('is-contact-open')) lenis.stop();
+      if (root.classList.contains('is-loading') || root.classList.contains('is-contact-open') || root.classList.contains('is-about-hold')) lenis.stop();
       else lenis.start();
     };
     new MutationObserver(syncLock).observe(root, { attributes: true, attributeFilter: ['class'] });

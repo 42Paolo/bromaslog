@@ -1,34 +1,34 @@
 /*
- * About page (#chi-siamo): one white page that is HELD on screen while the scroll plays everything, the same way js/vision.js paints
- * "Direzione. Tensione. Spazio." on the page that follows: the scroll position IS the animation (scrubbed, forwards and backwards), nothing
- * is started by a gesture, nothing blocks the visitor. The three machines are those three words: TEXY (direction), EQU 8 (tension),
- * DENSITRAX (space).
+ * About page (#chi-siamo): two states of the same white page.
+ *   A  company introduction: the headline on three lines (top left), the two paragraphs and the link on the right, the lower left empty.
+ *   B  the TEXY TRJ W machine: the headline on ONE line across the page, the photo rising into the lower left, the machine text on the right.
  *
- * How it is held: the white page is sticky (css/site.css), and an empty "runway" (.about-runway) after it gives the scroll its length.
- * While the runway goes by the white page stays put, then the black page rises over it (js/overlay.js).
+ * It is a one-shot sequence started by a scroll attempt, NOT scrubbed: once started it runs at its own speed, and the page cannot move
+ * on until it has finished. A small state machine drives it: INITIAL -> FWD -> FINAL -> REV -> INITIAL.
+ *   - Scrolling DOWN past the page while in INITIAL plays the sequence forward (about 3 s).
+ *   - Scrolling back UP past the page while in FINAL plays it backwards (half the time).
+ *   - Arriving on the page never starts anything by itself: the page rests there (~0.5 s) and a new scroll gesture is needed.
  *
- * The script, in screens of scroll (BEATS below):
- *   - the company text rests;
- *   - intro: the headline goes from three lines to ONE line across the page, the TEXY TRJ W photo rises from below, the company text
- *     dissolves into small squares and the machine text re-assembles from squares;
- *   - TEXY rests; then machine 1 slides out to the left while EQU 8 comes in from the right (a carousel); EQU 8 rests;
- *   - the same once more for DENSITRAX; it rests; the black page rises.
+ * One GSAP timeline holds everything, so reversing it is simply timeline.reverse():
+ *   - headline: FLIP, every word travels from its place in the three lines to its place in the one-line layout and grows to the final size;
+ *   - photo: rises from below the page (clipped by the page itself);
+ *   - text swap: the old paragraphs dissolve into small squares and the new text re-assembles from squares. Both are drawn on one small
+ *     canvas laid over the text (a few thousand squares, no extra DOM); the real text stays in the HTML and is only shown when it is "on".
  *
- * Two GSAP timelines hold the movement (paused, set to the frame that matches the scroll): `tl` the intro, `tlS` the carousel (SLIDE seconds
- * per step). The squares are drawn on one small canvas laid over the text (a few thousand squares, no extra DOM); the real text stays in the
- * HTML and is only shown when it is "on".
+ * A second step works the same way: one more scroll attempt slides machine 1 out to the left while machine 2 (EQU 8 creel) comes in from
+ * the right, like a carousel; scrolling back up reverses it.
  *
- * Phones (< 768px) and "reduce motion": no sequence and no holding, the machine blocks simply follow the text (photo above its description).
+ * Phones (< 768px) and "reduce motion": no sequence and no scroll lock, the machine blocks simply follow the text (photo above its description).
  */
 (function () {
   'use strict';
   var gsap = window.gsap;
+  var root = document.documentElement;
   var section = document.getElementById('chi-siamo');
   var hero = document.querySelector('.site-hero');
-  var runway = document.querySelector('.about-runway');
   var title = section && section.querySelector('.sec-title');
   var cols = section && section.querySelector('.sec-cols');
-  var machine = section && section.querySelector('.about-machine:not(.am-second):not(.am-third)');
+  var machine = section && section.querySelector('.about-machine:not(.am-second)');
   var media = machine && machine.querySelector('.am-media');
   var copy = machine && machine.querySelector('.am-copy');
   var machine2 = section && section.querySelector('.about-machine.am-second');
@@ -37,7 +37,7 @@
   var machine3 = section && section.querySelector('.about-machine.am-third');
   var media3 = machine3 && machine3.querySelector('.am-media');
   var copy3 = machine3 && machine3.querySelector('.am-copy');
-  if (!gsap || !section || !hero || !runway || !title || !cols || !machine || !media || !copy || !machine2 || !media2 || !copy2 || !machine3 || !media3 || !copy3) return;
+  if (!gsap || !section || !hero || !title || !cols || !machine || !media || !copy || !machine2 || !media2 || !copy2 || !machine3 || !media3 || !copy3) return;
   var machines = [machine, machine2, machine3], medias = [media, media2, media3], copies = [copy, copy2, copy3];
   var imgs = medias.map(function (m) { return m.querySelector('.am-img'); });
 
@@ -46,34 +46,48 @@
     (params.get('motion') !== 'full' && !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches));
 
   var desktop = window.matchMedia ? window.matchMedia('(min-width: 768px)') : { matches: true };
+  var lenis = window.bromaslogLenis || null;
 
+  var HOLD = 500;               // ms the page rests on arrival before a scroll attempt counts
+  var FRESH_GAP = 100;          // ms of silence that make a wheel event a new gesture (not the tail of a trackpad flick)
+  var REVERSE_SPEED = 2;        // the way back runs twice as fast
   var CELL = 3;                 // size of the dissolve squares, in CSS px
   var DRIFT = 7;                // how far a square wanders, in CSS px
-  var SLIDE = 2.6;              // seconds of the carousel timeline per step
 
-  // The script: vh of scroll for each beat. Change a number to make a part longer or shorter.
-  var BEATS = [
-    ['rest0', 25],              // the company text
-    ['intro', 120],             // headline -> one line, photo rises, text dissolves and re-assembles
-    ['rest1', 50],              // TEXY TRJ W
-    ['slide1', 100],            // TEXY out, EQU 8 in
-    ['rest2', 50],              // EQU 8
-    ['slide2', 100],            // EQU 8 out, DENSITRAX in
-    ['rest3', 60]               // DENSITRAX, then the black page
-  ];
-  var total = 0, at = {};
-  BEATS.forEach(function (b) { at[b[0]] = [total, total + b[1]]; total += b[1]; });
-  runway.style.setProperty('--about-run', String(total));
-  function seg(p, name) {
-    var a = at[name][0] / total, b = at[name][1] / total;
-    return p <= a ? 0 : p >= b ? 1 : (p - a) / (b - a);
-  }
-
-  var tl = null, tlS = null;    // tl: the intro; tlS: the carousel (one timeline, SLIDE seconds per step)
+  // INITIAL (company text) -> FWD -> FINAL (machine 1) -> FWD2 -> SECOND (machine 2) -> FWD3 -> THIRD (machine 3), and the same way back (REV3, REV2, REV).
+  var state = 'INITIAL';        // INITIAL | FWD | FINAL | REV | FWD2 | SECOND | REV2 | FWD3 | THIRD | REV3
+  var arrived = null;           // 'down' | 'up': the page is held on the white page waiting for a scroll attempt
+  var holdUntil = 0;
+  var lastWheel = 0;
+  var swallowTail = false;      // right after a release: ignore the rest of the gesture that was going on
+  var lastY = window.pageYOffset;
+  var touchY = null;
+  var tl = null, tlS = null, slideTw = null;     // tl: the first sequence; tlS: the carousel (one timeline, SLIDE seconds per step)
+  var SLIDE = 2.6;
+  var dirty = false;            // a resize / language change came while the sequence was running
   var fx = { old: 0, neu: 0, s2: 0, s3: 0 };  // progress of the square transitions, and of the two carousel steps
 
+  function running() { return /^(FWD|REV)[23]?$/.test(state); }
+  var STATES = ['INITIAL', 'FINAL', 'SECOND', 'THIRD'];
+  function stepOf() { return Math.max(0, STATES.indexOf(state)); }
+  // where one more scroll attempt in this direction leads (null: nothing, the page just moves on)
+  function nextState(down) {
+    if (state === 'INITIAL') return down ? 'FWD' : null;
+    if (state === 'FINAL') return down ? 'FWD2' : 'REV';
+    if (state === 'SECOND') return down ? 'FWD3' : 'REV2';
+    if (state === 'THIRD') return down ? null : 'REV3';
+    return null;
+  }
   function active() { return desktop.matches && !reduced; }
-
+  // Scroll position at which the page rests: the white page is fully in view. When it is a little taller than the screen that is
+  // where its bottom edge meets the bottom of the screen (the point where the black footer starts to slide over it), not where its top does.
+  // (measured when the layout changes, not on every scroll event: reading sizes there would force a reflow each time)
+  var gate = hero.offsetHeight;
+  function computeGate() {
+    gate = hero.offsetHeight + Math.max(0, Math.min(section.offsetHeight - window.innerHeight, 120));
+  }
+  function gateY() { return gate; }
+  if (window.ResizeObserver) { var gro = new ResizeObserver(computeGate); gro.observe(hero); gro.observe(section); }
   // textreveal.js splits the headline into words; with "reduce motion" it does not run, so do it here (same markup, nothing hidden).
   function ensureWords() {
     if (title.querySelector('.tw-word')) return;
@@ -249,17 +263,7 @@
   }
 
   var fxReady = false;
-  // Cutting the text into squares takes a few tens of ms: it is done once, when the page is idle (or just before it is first needed).
-  // The text must be measured in its neutral state (before anything has moved), wherever the scroll is: the timelines are put on their
-  // first frame for that, then back where they were.
-  function ensureFx() {
-    if (fxReady || !tl || !tlS) return;
-    var t1 = tl.time(), t2 = tlS.time();
-    tl.time(0, true); tlS.time(0, true);
-    prepareFx();
-    tl.time(t1, true); tlS.time(t2, true);
-    fxReady = true;
-  }
+  function ensureFx() { if (!fxReady) { prepareFx(); fxReady = true; } }   // cutting the text into squares takes a few tens of ms: done while the page rests, not when the sequence starts
   function prepareFx() {
     var dpr = Math.min(window.devicePixelRatio || 1, 2);
     var oldWords = collectWords(Array.prototype.slice.call(cols.querySelectorAll('.sec-text, .sec-textlink')));
@@ -325,22 +329,22 @@
   }
 
   /* ======================================================================
-     The timelines
+     The timeline
      ====================================================================== */
 
   function killTl() {
     if (tl) { tl.kill(); tl = null; }
+    if (slideTw) { slideTw.kill(); slideTw = null; }
     if (tlS) { tlS.kill(); tlS = null; }
   }
 
   function build() {
     killTl();
     fxReady = false;
-    shownKey = '';
-    fx.old = fx.neu = fx.s2 = fx.s3 = 0;               // a tween that is "to" a value starts from whatever the value is when it is first drawn: these must be 0 here, not what the last build left
     var info = targets();
     if (!info) return false;
     var dy = layout(info);
+    computeGate();
     var kids = copies.map(function (c) { return Array.prototype.slice.call(c.children); });
     var left = machine.offsetLeft + media.offsetLeft;
     gsap.set(media, { x: 0, y: dy });
@@ -350,34 +354,30 @@
       gsap.set(imgs[k], { x: 140 }); gsap.set(kids[k], { x: 70, opacity: 0 });
     }
 
-    // Eases are gentle (power2 / sine / none): the timelines follow the scroll, and a sharp ease would leave the start and the end of every
-    // movement almost still and rush through the middle.
-    var EM = 'power2.inOut';
-    // Every start value is written out (fromTo), never read from the page: the timeline is scrubbed back and forth, and after a rebuild the
-    // page may be in any state.
-    var NO = { immediateRender: false };
-    tl = gsap.timeline({ paused: true });
+    // (every tween has its start value written out, so a rebuild never starts from what the previous timeline left behind)
+    var N0 = { immediateRender: false };
+    tl = gsap.timeline({ paused: true, onUpdate: render, onComplete: onForwardDone, onReverseComplete: onReverseDone });
     info.list.forEach(function (d, i) {                                              // headline: three lines -> one line
-      tl.fromTo(d.el, { x: 0, y: 0, scale: 1 }, Object.assign({ x: d.x, y: d.y, scale: d.scale, duration: 2.1, ease: EM }, NO), i * 0.06);
+      tl.fromTo(d.el, { x: 0, y: 0, scale: 1 }, Object.assign({ x: d.x, y: d.y, scale: d.scale, duration: 2.1, ease: 'power3.inOut' }, N0), i * 0.06);
     });
-    tl.fromTo(media, { y: dy }, Object.assign({ y: 0, duration: 2.6, ease: EM }, NO), 0.2);          // photo rises
-    tl.fromTo(fx, { old: 0 }, Object.assign({ old: 1, duration: 0.85, ease: 'none' }, NO), 1.2);     // old text dissolves
-    tl.fromTo(fx, { neu: 0 }, Object.assign({ neu: 1, duration: 0.9, ease: 'none' }, NO), 1.95);     // machine text assembles
+    tl.fromTo(media, { y: dy }, Object.assign({ y: 0, duration: 2.6, ease: 'power3.inOut' }, N0), 0.2);   // photo rises
+    tl.fromTo(fx, { old: 0 }, Object.assign({ old: 1, duration: 0.85, ease: 'power1.inOut' }, N0), 1.2);  // old text dissolves
+    tl.fromTo(fx, { neu: 0 }, Object.assign({ neu: 1, duration: 0.9, ease: 'power1.inOut' }, N0), 1.95);  // machine text assembles
     tl.to({}, { duration: 0.1 }, 2.85);                                              // settle
 
     // Carousel, one timeline for both steps (SLIDE seconds each): the current machine slides out to the left, the next comes in from the
     // right (photos with a little depth between them, the text lines follow one after the other). The text of the machine that leaves
     // is gone before the next photo reaches its column, and the new text only appears once that photo has cleared its column.
     var out = left + media.offsetWidth + 60;
-    var NI = { immediateRender: false };
-    tlS = gsap.timeline({ paused: true });
+    var E = 'power3.inOut', NI = { immediateRender: false };
+    tlS = gsap.timeline({ paused: true, onUpdate: render });
     function step(t0, a, b, key) {
-      tlS.fromTo(medias[a], { x: 0 }, Object.assign({ x: -out, duration: 1.6, ease: EM }, NI), t0);
-      tlS.fromTo(imgs[a], { x: 0 }, Object.assign({ x: -110, duration: 1.6, ease: EM }, NI), t0);
-      tlS.fromTo(medias[b], { x: section.clientWidth - left }, Object.assign({ x: 0, duration: 1.6, ease: EM }, NI), t0 + 0.1);
-      tlS.fromTo(imgs[b], { x: 140 }, Object.assign({ x: 0, duration: 1.6, ease: EM }, NI), t0 + 0.1);
+      tlS.fromTo(medias[a], { x: 0 }, Object.assign({ x: -out, duration: 1.6, ease: E }, NI), t0);
+      tlS.fromTo(imgs[a], { x: 0 }, Object.assign({ x: -110, duration: 1.6, ease: E }, NI), t0);
+      tlS.fromTo(medias[b], { x: section.clientWidth - left }, Object.assign({ x: 0, duration: 1.6, ease: E }, NI), t0 + 0.1);
+      tlS.fromTo(imgs[b], { x: 140 }, Object.assign({ x: 0, duration: 1.6, ease: E }, NI), t0 + 0.1);
       tlS.fromTo(kids[a], { x: 0, opacity: 1 }, Object.assign({ x: -60, opacity: 0, duration: 0.35, ease: 'power2.in', stagger: 0.03 }, NI), t0);
-      tlS.fromTo(kids[b], { x: 70, opacity: 0 }, Object.assign({ x: 0, opacity: 1, duration: 0.8, ease: 'power2.out', stagger: 0.06 }, NI), t0 + 1.45);
+      tlS.fromTo(kids[b], { x: 70, opacity: 0 }, Object.assign({ x: 0, opacity: 1, duration: 0.8, ease: 'power3.out', stagger: 0.06 }, NI), t0 + 1.45);
       var from = {}; from[key] = 0;
       var to = { duration: 1.7, ease: 'none' }; to[key] = 1;
       tlS.fromTo(fx, from, Object.assign(to, NI), t0);
@@ -388,90 +388,193 @@
     return true;
   }
 
-  // which machine is at rest on the page (for assistive tech and for the mouse: only that one can be clicked)
-  var shownKey = '';
-  function aria(pi, s1, s2) {
-    var shown = pi < 1 ? -1 : s1 < 0.5 ? 0 : s2 < 0.5 ? 1 : 2;
-    var colsHidden = pi > 0.5;
-    var key = shown + '|' + colsHidden;
-    if (key === shownKey) return;
-    shownKey = key;
+  function showState() {
+    var shown = STATES.indexOf(state) - 1;                       // which machine is at rest on the page (-1: none)
     machines.forEach(function (m, i) {
       if (i === shown) m.removeAttribute('aria-hidden'); else m.setAttribute('aria-hidden', 'true');
       m.classList.toggle('am-on', i === shown);
     });
-    if (colsHidden) cols.setAttribute('aria-hidden', 'true'); else cols.removeAttribute('aria-hidden');
+    if (shown >= 0 || /^(FWD|REV)[23]$/.test(state)) cols.setAttribute('aria-hidden', 'true'); else cols.removeAttribute('aria-hidden');
   }
 
-  // puts the timelines on the frame that matches the scroll (p: 0..1 over the whole script)
-  function apply(p) {
-    if (!tl || !tlS) return;
-    var pi = seg(p, 'intro'), s1 = seg(p, 'slide1'), s2 = seg(p, 'slide2');
-    if (!fxReady && pi > 0) ensureFx();                       // normally done while idle; this is only in case the scroll got here first
-    tl.time(pi * tl.duration(), true);
-    tlS.time(SLIDE * (s1 + s2), true);
+  // puts the timelines on the frames that match the current (resting) state
+  function applyState() {
+    var step = stepOf();
+    // The fade values are not written here: the timelines carry them. They go back to the start first and then to the frame of this state,
+    // so each tween starts from 0 (a tween that first sees a value of 1 would never fade it again) and always draws, even when already there.
+    fx.old = fx.neu = fx.s2 = fx.s3 = 0;
+    tl.time(0, true);
+    tlS.time(0, true);
+    tl.progress(step >= 1 ? 1 : 0, true);
+    tlS.time(step <= 1 ? 0 : (step - 1) * SLIDE, true);
     render();
-    aria(pi, s1, s2);
+    showState();
+  }
+
+  // (Re)builds the timelines and applies the current state.
+  function rebuild() {
+    if (!build()) return;
+    applyState();
   }
 
   /* ======================================================================
-     The scroll
+     Holding the page, and the scroll attempt
      ====================================================================== */
 
-  var cur = 0, target = 0, raf = 0, last = 0;
-  var start = 0, len = 1;
+  function lock(on) {
+    root.classList.toggle('is-about-hold', on);       // scroll.js keeps Lenis stopped while this class is on
+    if (lenis) { if (on) lenis.stop(); else lenis.start(); }
+  }
+
+  function clampToGate() {
+    if (Math.abs(window.pageYOffset - gateY()) < 0.5) return;
+    if (lenis) lenis.scrollTo(gateY(), { immediate: true, force: true });
+    else window.scrollTo(0, gateY());
+  }
+
+  function arrive(dir) {
+    arrived = dir;
+    holdUntil = Date.now() + HOLD;
+    lock(true);
+    clampToGate();
+    window.requestAnimationFrame(function () { if (arrived && !running()) ensureFx(); });
+  }
+
+  function release() {
+    arrived = null;
+    swallowTail = true;
+    lock(false);
+  }
+
+  // A step has ended: the page keeps resting here, whichever way the visitor is going. The next gesture either starts the next step
+  // or, when there is none that way (the first text going up, the last machine going down), lets the page move on.
+  // So the visitor can never skip over a step, in either direction.
+  function afterStep(down) {
+    showState();
+    arrived = down ? 'down' : 'up';
+    holdUntil = Date.now() + HOLD;
+    if (dirty) { dirty = false; rebuild(); }
+  }
+  function onForwardDone() { state = 'FINAL'; afterStep(true); }
+  function onForward2Done() { state = 'SECOND'; afterStep(true); }
+  function onForward3Done() { state = 'THIRD'; afterStep(true); }
+  function onReverse3Done() { state = 'SECOND'; afterStep(false); }
+  function onReverse2Done() { state = 'FINAL'; afterStep(false); }
+  function onReverseDone() { state = 'INITIAL'; afterStep(false); }
+
+  function start(next) {
+    if (!tl || running()) return;
+    if (dirty) { dirty = false; rebuild(); }
+    arrived = null;
+    if (next === 'FWD' || next === 'REV') ensureFx();
+    state = next;
+    if (next === 'FWD') tl.timeScale(1).play(0);
+    else if (next === 'REV') tl.timeScale(REVERSE_SPEED).reverse(tl.duration());
+    else {                                                           // a carousel step: the playhead of the carousel timeline travels between the two times
+      var go = { FWD2: [0, SLIDE, onForward2Done, 1], REV2: [SLIDE, 0, onReverse2Done, 1.3], FWD3: [SLIDE, 2 * SLIDE, onForward3Done, 1], REV3: [2 * SLIDE, SLIDE, onReverse3Done, 1.3] }[next];
+      slideTw = tlS.tweenFromTo(go[0], go[1], { duration: SLIDE / go[3], ease: 'none', onComplete: go[2] });
+    }
+  }
+
+  // straight to a state, no sequence and no hold
+  function jump(step) {
+    if (!tl) return;
+    state = STATES[step];
+    applyState();
+    if (arrived || root.classList.contains('is-about-hold')) release();
+    swallowTail = false;
+  }
 
   function onScroll() {
-    if (!tl) return;
-    var t = (window.pageYOffset - start) / len;
-    t = t < 0 ? 0 : t > 1 ? 1 : t;
-    if (t === target) return;
-    target = t;
-    kick();
-  }
-  function kick() {
-    if (raf) return;
-    last = performance.now();
-    raf = window.requestAnimationFrame(loop);
-  }
-  // the page follows the scroll position with a short ease, so it never jumps; it only runs while it has somewhere to go
-  function loop(now) {
-    var dt = Math.min(0.1, (now - last) / 1000);
-    last = now;
-    var d = target - cur;
-    if (Math.abs(d) < 0.00005) { cur = target; raf = 0; apply(cur); return; }
-    cur += d * Math.min(1, dt * 7);
-    apply(cur);
-    raf = window.requestAnimationFrame(loop);
+    if (!active() || !tl) return;
+    var y = window.pageYOffset, g = gateY();
+    if (running() || arrived) clampToGate();
+    // The page rests on the gate whenever there is a step in the direction the visitor goes: arriving at it, or leaving it from where it
+    // stopped (the step before may have ended right here), either way one scroll attempt has to be made to go on.
+    else if (state !== 'THIRD' && lastY <= g + 0.5 && y > lastY && y >= g - 0.5) arrive('down');   // going down through the gate
+    else if (state !== 'INITIAL' && lastY >= g - 0.5 && y < lastY && y <= g + 0.5) arrive('up');    // going up through the gate
+    if (!running() && !arrived && state !== 'INITIAL' && y < lastY && y < g - 0.85 * window.innerHeight) jump(0);   // far back up (link): starts over
+    lastY = window.pageYOffset;
   }
 
-  // The white page is held from the moment its bottom edge meets the bottom of the screen (where the runway starts to come into view)
-  // for as long as the runway is. (measured when the layout changes, not on every scroll event)
-  function measure() {
-    if (!tl) return;
-    start = Math.max(runway.getBoundingClientRect().top + window.pageYOffset - window.innerHeight, hero.offsetHeight);
-    len = Math.max(1, runway.offsetHeight);
-    onScroll();
-    kick();
+  // down: the visitor tries to go further down; otherwise up.
+  function attempt(down, e) {
+    if (!active() || !tl) return;
+    if (running()) { if (e && e.cancelable) e.preventDefault(); return; }
+    if (!arrived) return;
+    var next = nextState(down);
+    if (!next) { arrived = null; lock(false); return; }            // nothing more that way: let the page move
+    if (e && e.cancelable) e.preventDefault();
+    if (Date.now() >= holdUntil) start(next);
   }
 
-  // idle time: cut the text into squares now, so the first dissolve does not have to
-  function whenIdle(fn) {
-    if (window.requestIdleCallback) window.requestIdleCallback(fn, { timeout: 1200 });
-    else window.setTimeout(fn, 200);
-  }
-  function prepareLater() {
-    whenIdle(function () { if (tl && active()) { ensureFx(); apply(cur); } });
-  }
+  // Trackpads keep sending small wheel events for a second or more after the fingers have left (inertia), and a visitor often starts the
+  // next swipe before that has died down. So a scroll attempt is: after the rest, a wheel event of some size that is either a new gesture
+  // (a gap before it), a swipe that picks up speed, or simply comes well after the rest.
+  var prevAbs = 0, pending = 0;
+  window.addEventListener('wheel', function (e) {
+    if (!active() || !tl) return;
+    var now = Date.now();
+    var fresh = now - lastWheel > FRESH_GAP;
+    var abs = Math.abs(e.deltaY);
+    var rising = abs > prevAbs + 3;
+    lastWheel = now;
+    prevAbs = abs;
+    if (running()) { if (e.cancelable) e.preventDefault(); e.stopPropagation(); return; }
+    if (swallowTail) {                                                      // the sequence has just ended: the rest of that gesture does nothing
+      if (!fresh && !rising) { if (e.cancelable) e.preventDefault(); e.stopPropagation(); return; }
+      swallowTail = false;
+    }
+    if (!arrived) return;
+    var down = e.deltaY > 0;
+    var next = nextState(down);
+    if (!next) { attempt(down, e); return; }                                // nothing more that way: the page is let go
+    if (e.cancelable) e.preventDefault();
+    if (abs < 6) return;
+    if (now < holdUntil) {                                                  // a real new swipe during the rest is not lost: it starts when the rest is over
+      if ((fresh || rising) && !pending) {
+        var from = state;
+        pending = window.setTimeout(function () {
+          pending = 0;
+          if (arrived && state === from && !running()) start(next);
+        }, holdUntil - now + 20);
+      }
+      return;
+    }
+    if (fresh || rising || now >= holdUntil + 500) attempt(down, e);
+  }, { passive: false, capture: true });
 
-  // (Re)builds the timelines for the current size and puts them on the frame of the current scroll position.
-  function rebuild() {
-    if (!build()) return;
-    measure();
-    cur = target;
-    apply(cur);
-    prepareLater();
-  }
+  window.addEventListener('keydown', function (e) {
+    if (!active() || e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey) return;
+    var t = e.target;
+    if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
+    var down = e.key === 'ArrowDown' || e.key === 'PageDown' || e.key === 'End' || (e.key === ' ' && !e.shiftKey);
+    var up = e.key === 'ArrowUp' || e.key === 'PageUp' || e.key === 'Home' || (e.key === ' ' && e.shiftKey);
+    if (down) attempt(true, e);
+    else if (up) attempt(false, e);
+  }, true);
+
+  window.addEventListener('touchstart', function (e) { touchY = e.touches.length ? e.touches[0].clientY : null; }, { passive: true, capture: true });
+  window.addEventListener('touchmove', function (e) {
+    if (touchY === null || !e.touches.length) return;
+    var dy = touchY - e.touches[0].clientY;                              // positive: finger moving up = scrolling down
+    if (Math.abs(dy) < 12) return;
+    touchY = e.touches[0].clientY;
+    attempt(dy > 0, e);
+  }, { passive: false, capture: true });
+
+  // Links: one to something below the white page takes the page to its final state at once (nothing should hold it);
+  // one to the top of the site starts it over.
+  document.addEventListener('click', function (e) {
+    var a = e.target.closest && e.target.closest('a[href^="#"]');
+    if (!a || !active() || !tl || running()) return;
+    var id = a.getAttribute('href').slice(1);
+    var target = id === 'top' ? hero : (id && document.getElementById(id));
+    if (!target || target === section) return;
+    var below = target.getBoundingClientRect().top + window.pageYOffset > section.offsetTop;
+    if (below && state !== 'THIRD') jump(3);
+    else if (!below && state !== 'INITIAL') jump(0);
+  }, true);
 
   /* ======================================================================
      Phones, reduced motion, resize, language
@@ -484,7 +587,6 @@
     killTl();
     wordsOf().forEach(function (w) { gsap.set(w, { clearProps: 'transform' }); });
     section.classList.add('am-flat');
-    runway.classList.remove('is-live');
     machines.forEach(function (m) {
       gsap.set(m.querySelector('.am-media'), { clearProps: 'transform' });
       gsap.set(m.querySelector('.am-img'), { clearProps: 'transform' });
@@ -497,7 +599,8 @@
     cols.removeAttribute('aria-hidden');
     section.style.minHeight = '';
     clearFx();
-    cur = target = 0;
+    state = 'INITIAL'; arrived = null;
+    lock(false);
     // simple fade-up when they scroll into view (nothing at all with reduced motion)
     if (io) { io.disconnect(); io = null; }
     if (reduced || !('IntersectionObserver' in window)) { machines.forEach(function (m) { m.classList.remove('am-pre'); }); return; }
@@ -511,17 +614,17 @@
   function toDesktop() {
     if (io) { io.disconnect(); io = null; }
     section.classList.remove('am-flat');
-    runway.classList.add('is-live');
     machines.forEach(function (m) { m.classList.remove('am-pre'); });
     rebuild();
   }
 
-  var rz = 0;
+  var raf = 0;
   function refresh() {
-    if (rz) return;
-    rz = window.requestAnimationFrame(function () {
-      rz = 0;
+    if (raf) return;
+    raf = window.requestAnimationFrame(function () {
+      raf = 0;
       if (flat()) { toFlat(); return; }
+      if (running()) { dirty = true; return; }
       toDesktop();
     });
   }
@@ -531,18 +634,20 @@
   window.addEventListener('bromaslog:languagechange', function () {
     window.requestAnimationFrame(function () { window.requestAnimationFrame(function () {
       if (flat()) return;
+      if (running()) { dirty = true; return; }
       rebuild();
     }); });
   });
   window.addEventListener('scroll', onScroll, { passive: true });
-  // the page above or below changes height (fonts, images): the runway moves
-  if (window.ResizeObserver) new ResizeObserver(function () { measure(); }).observe(document.getElementById('site') || document.body);
 
   var ready = document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve();
   ready.then(function () {
     window.setTimeout(function () {
       if (flat()) { toFlat(); return; }
-      toDesktop();
+      if (window.pageYOffset > gateY() + 5) state = 'THIRD';              // opened (or reloaded) already below the white page
+      rebuild();
+      lastY = window.pageYOffset;
+      onScroll();
     }, 300);
   });
 })();
