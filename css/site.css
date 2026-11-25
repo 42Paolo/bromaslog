@@ -471,18 +471,21 @@ html.is-about-hold { scrollbar-gutter: stable; }
   font-weight: 500; letter-spacing: -.035em;
 }
 .v-triad { margin: 0; display: flex; flex-wrap: wrap; justify-content: center; column-gap: .34em; font-size: min(6.6vw, 150px); line-height: 1.05; }
+.v-lines { display: flex; flex-direction: column; align-items: center; gap: calc(44 * var(--vr)); }
 .v-line { margin: 0; max-width: 16em; font-size: clamp(30px, 4.6vw, 86px); line-height: 1.12; }
+.v-line2 { margin: 0; max-width: 24em; font-size: clamp(18px, 2.2vw, 40px); line-height: 1.3; }
 .v-word { white-space: nowrap; }
 .v-lw { display: inline-block; white-space: nowrap; }
 .v-c { display: inline-block; }
 
 #visione.vision-live { height: calc(var(--vision-total, 750) * 1vh); height: calc(var(--vision-total, 750) * 1svh); }
 .vision-live .vision-stage { position: sticky; top: 0; height: 100vh; height: 100svh; min-height: 0; display: grid; place-items: center; padding: 0 5vw; }
-.vision-live .v-triad, .vision-live .v-line { grid-area: 1 / 1; }
+.vision-live .v-triad, .vision-live .v-lines { grid-area: 1 / 1; }
 .vision-live .v-c { color: transparent; }
-.vision-live .v-triad { will-change: transform; }
+.vision-live .v-triad, .vision-live .v-lines { will-change: transform; }
 
 @media (max-width: 767px) {
   .v-triad { flex-direction: column; align-items: center; font-size: 17vw; column-gap: 0; }
   .v-line { font-size: 9.4vw; max-width: 90vw; }
+  .v-line2 { font-size: 5vw; max-width: 90vw; }
 }

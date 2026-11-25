@@ -8,6 +8,7 @@
  *   Spazio.
  *   -> all three are erased at the same moment, each from its right end to its left
  *   -> black for a beat, then "Ciò che rende forte un tessuto, sotto controllo." is painted letter by letter
+ *   -> a beat later a second, smaller line for the partners is painted under it (the pair slides to stay in the middle of the screen)
  *   -> a last rest, then the screen is let go.
  *
  * BEATS below is the whole script, in screens of scroll (vh): change a number to make a part longer or shorter.
@@ -22,8 +23,10 @@
   var stage = section.querySelector('.vision-stage');
   var wordEls = Array.prototype.slice.call(section.querySelectorAll('.v-word'));
   var lineEl = section.querySelector('.v-line');
+  var line2El = section.querySelector('.v-line2');
+  var linesEl = section.querySelector('.v-lines');
   var srEl = document.getElementById('vision-sr');
-  if (!stage || !wordEls.length || !lineEl) return;
+  if (!stage || !wordEls.length || !lineEl || !line2El || !linesEl) return;
 
   var params = new URLSearchParams(window.location.search);
   var reduced = params.get('motion') === 'reduced' ||
@@ -42,6 +45,8 @@
     ['erase', 70],    // all three erased, right to left
     ['dark', 40],     // black
     ['line', 140],    // the closing line is painted
+    ['gap3', 30],
+    ['line2', 100],   // the line for the partners is painted under it
     ['end', 70]       // at rest, then the page moves on
   ];
   var WC = 0.45;      // part of a word's time one letter takes to light up (the rest is the wave running along)
@@ -83,9 +88,9 @@
     return chars;
   }
 
-  var words = [], lineChars = [];
+  var words = [], lineChars = [], line2Chars = [];
   var triad = section.querySelector('.v-triad');
-  var geo = { stacked: false, left: [], size: [], total: 0 };
+  var geo = { stacked: false, left: [], size: [], total: 0, half2: 0 };
 
   // where each of the three words sits inside the group (along the row, or down the column on phones), so the part that is painted can be kept centred
   function measureTriad() {
@@ -95,16 +100,20 @@
     geo.size = wordEls.map(function (e) { return geo.stacked ? e.offsetHeight : e.offsetWidth; });
     var l = wordEls.length - 1;
     geo.total = geo.left[l] + geo.size[l];
+    // the second line takes room below the first: until it is painted the pair is pushed down by half of it, so the first line stays in the middle
+    var gap = parseFloat(getComputedStyle(linesEl).rowGap) || 0;
+    geo.half2 = (line2El.offsetHeight + gap) / 2;
   }
 
   function build() {
     words = wordEls.map(split);
     lineChars = split(lineEl);
+    line2Chars = split(line2El);
     var n = 0;
-    words.concat([lineChars]).forEach(function (list) {
+    words.concat([lineChars, line2Chars]).forEach(function (list) {
       list.forEach(function (c) { c._r = ((n++ * 37) % 13 - 6) / 10; c._k = ''; });   // a fixed little tilt for each letter
     });
-    if (srEl) srEl.textContent = wordEls.map(function (e) { return e.textContent; }).join(' ') + ' ' + lineEl.textContent;
+    if (srEl) srEl.textContent = wordEls.map(function (e) { return e.textContent; }).join(' ') + ' ' + lineEl.textContent + ' ' + line2El.textContent;
     measureTriad();
   }
 
@@ -136,7 +145,7 @@
   }
 
   function render() {
-    var p = cur, pe = seg(p, 'erase'), pl = seg(p, 'line');
+    var p = cur, pe = seg(p, 'erase'), pl = seg(p, 'line'), pl2 = seg(p, 'line2');
     var vis = 0;                                      // how much of the group has been written so far (px), to keep it centred
     words.forEach(function (chars, wi) {
       var pw = smooth(seg(p, 'w' + (wi + 1)));
@@ -158,6 +167,14 @@
       var x = m > 1 ? j / (m - 1) : 0;
       paint(c, clamp((pl - x * (1 - WL)) / WL), 0);
     });
+    var m2 = line2Chars.length;
+    line2Chars.forEach(function (c, j) {
+      var x = m2 > 1 ? j / (m2 - 1) : 0;
+      paint(c, clamp((pl2 - x * (1 - WL)) / WL), 0);
+    });
+    var down = geo.half2 * (1 - smooth(clamp(pl2 * 3)));      // the pair rises into the middle as the second line starts to be painted
+    var tl = down > 0.5 ? 'translate3d(0,' + down.toFixed(1) + 'px,0)' : '';
+    if (linesEl._tf !== tl) { linesEl._tf = tl; linesEl.style.transform = tl; }
   }
 
   /* ---------- the scroll ---------- */

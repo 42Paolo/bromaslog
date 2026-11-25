@@ -21,7 +21,7 @@
   <link rel="preload" as="image" href="assets/bg-video-poster.jpg" fetchpriority="high">
   <link rel="stylesheet" href="css/motion.css?v=20261261">
   <link rel="stylesheet" href="css/preloader.css?v=20261150">
-  <link rel="stylesheet" href="css/site.css?v=20261260">
+  <link rel="stylesheet" href="css/site.css?v=20261263">
   <link rel="stylesheet" href="css/contact.css?v=20261260">
 </head>
 <body id="top">
@@ -220,7 +220,7 @@
 
     <!-- Last page: "La nostra visione". Black; it rises over the white page, so it is reached only by scrolling down from the last machine
          (DENSITRAX). Then the screen is held (tall section, sticky stage) and the scroll paints the words one by one (js/vision.js):
-         Direzione. / Tensione. / Spazio. -> all three erased from right to left -> the closing line.
+         Direzione. / Tensione. / Spazio. -> all three erased from right to left -> the closing line -> a second line for the partners.
          Without JavaScript or with "reduce motion" everything is simply shown. -->
     <section class="site-section" id="visione" aria-labelledby="vision-title">
       <h2 class="vision-sr" id="vision-title" data-i18n="vision.title">La nostra visione</h2>
@@ -231,7 +231,10 @@
           <span class="v-word" data-i18n="vision.w2">Tensione.</span>
           <span class="v-word" data-i18n="vision.w3">Spazio.</span>
         </p>
-        <p class="v-line" data-i18n="vision.line">Ciò che rende forte un tessuto, sotto controllo.</p>
+        <div class="v-lines">
+          <p class="v-line" data-i18n="vision.line">Ciò che rende forte un tessuto, sotto controllo.</p>
+          <p class="v-line2" data-i18n="vision.line2">Ciò che rende un tessuto pronto per le sfide dei nostri partner, in ogni settore.</p>
+        </div>
       </div>
     </section>
 
@@ -276,8 +279,8 @@
   <script src="js/overlay.js?v=20261220"></script>
   <script src="js/aboutmorph.js?v=20261262"></script>
   <script src="js/site.js?v=20261260"></script>
-  <script src="js/i18n.js?v=20261260"></script>
-  <script src="js/vision.js?v=20261260"></script>
+  <script src="js/i18n.js?v=20261264"></script>
+  <script src="js/vision.js?v=20261263"></script>
   <script src="js/contact.js?v=20261260"></script>
 </body>
 </html>
