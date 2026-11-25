@@ -213,11 +213,12 @@
       inner.children[0].textContent = from.charAt(i);
       inner.children[1].textContent = to.charAt(i);
     });
+    var M = window.BromaslogMotion;
     return window.gsap.fromTo(cols, { yPercent: 0 }, {
       yPercent: -50,
-      duration: 0.55,
-      ease: 'power3.inOut',
-      stagger: 0.07,
+      duration: M.dur.fast,
+      ease: M.ease.move,
+      stagger: M.stagger.base,
       onComplete: function () { showLabel(to); }
     });
   }
@@ -245,11 +246,13 @@
       return;
     }
 
+    var M = window.BromaslogMotion;
     var nav = document.getElementById('nav');
     var texts = gsap.utils.toArray('.nav-links > a, .site-eyebrow, .site-hero h1, .site-claim, .site-sub');
     var w0 = nav.getBoundingClientRect().width;
     root.classList.add('is-switching-lang');
 
+    var swap = M.exit(M.dur.fast) + M.delay.hair;                  // the old words are gone: the text is swapped
     var tl = gsap.timeline({
       onComplete: function () {
         root.classList.remove('is-switching-lang');
@@ -258,7 +261,7 @@
       }
     });
     tl.add(rollLabel(from, labelFor(next)), 0)
-      .to(texts, { autoAlpha: 0, y: -8, duration: 0.22, ease: 'power2.in', stagger: 0.03 }, 0)
+      .to(texts, { autoAlpha: 0, y: -8, duration: M.exit(M.dur.fast), ease: M.ease.in, stagger: M.stagger.tight }, 0)
       .call(function () {
         lang = next;
         save();
@@ -266,9 +269,9 @@
         gsap.set(nav, { width: 'auto' });
         var w1 = nav.getBoundingClientRect().width;               // width the bar needs for the new words
         gsap.set(nav, { width: w0 });
-        gsap.to(nav, { width: w1, duration: 0.5, ease: 'power3.inOut', clearProps: 'width' });
-      }, null, 0.32)
-      .fromTo(texts, { autoAlpha: 0, y: 8 }, { autoAlpha: 1, y: 0, duration: 0.45, ease: 'power3.out', stagger: 0.04 }, 0.36);
+        gsap.to(nav, { width: w1, duration: M.dur.fast, ease: M.ease.move, clearProps: 'width' });
+      }, null, swap)
+      .fromTo(texts, { autoAlpha: 0, y: 8 }, { autoAlpha: 1, y: 0, duration: M.dur.fast, ease: M.ease.out, stagger: M.stagger.tight }, swap + M.delay.hair);
   }
 
   buildLabel();

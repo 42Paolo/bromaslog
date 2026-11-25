@@ -1,0 +1,65 @@
+/*
+ * MOTION DESIGN SYSTEM: the one place where the speed of the whole site is decided.
+ *
+ * Every animation (CSS transition, GSAP tween, scroll-following loop) takes its duration, curve, stagger and delay from the tokens below.
+ * js/motion.js reads these same properties, so changing a number here changes the CSS and the scripts together.
+ * To make the whole site a little faster or calmer, move the DURATIONS (they keep their ratios of about 1 : 1.75 : 3 : 5 : 8).
+ *
+ * ---------------------------------------------------------------------------------------------------------------------------------
+ * HIERARCHY               what it is for                                                         where
+ * micro      0.20 s       hover, focus, colour and icon states                                    links, buttons, form fields, arrows
+ * fast       0.35 s       small feedback, short slides (< ~120 px), swapped words                 header, language switch, form status
+ * base       0.60 s       content that appears or changes: fades with a short rise, text, details  reveals, hero, text, contact content
+ * primary    1.00 s       the main movement of a screen: a block that grows or travels             contact panel, machine change
+ * scene      1.60 s       a whole choreography made of several moves that read as one              machine intro, preloader
+ * ---------------------------------------------------------------------------------------------------------------------------------
+ * RULES
+ *  - Same kind of motion, same duration; the size of a movement only changes it a little: js/motion.js travel() stretches or shrinks a
+ *    duration by at most -20% / +25% for short / long distances (a perceived speed, not a number).
+ *  - Things that leave are quicker than things that arrive: exit = duration x --exit-ratio (0.8).
+ *  - Things that move together share one duration and one curve (width and height of the contact bar, the photo and the dissolve of a machine).
+ *  - Stagger: tight for letters, words and small labels; base for list items; loose for separate blocks.
+ *  - Delay: short / base / mid / long are the beats between one movement and the next one that follows it.
+ *
+ * CURVES (one family, all with a soft landing, nothing bounces or overshoots)
+ *  out    for what arrives, settles, or reacts to a pointer
+ *  in     for what leaves
+ *  move   for what goes from one resting place to another (it starts gently and lands long)
+ *  soft   for pure fades and dissolves
+ *  (linear only where a value is mapped to the scroll or to the clock)
+ *
+ * Scroll: Lenis smooths the wheel with its default lerp of 0.1 (js/scroll.js); --follow-rate is the same smoothing, per second
+ * (-ln(1 - 0.1) x 60 = 6.3), for the loops that follow the scroll by themselves (js/vision.js).
+ */
+:root {
+  /* durations */
+  --dur-micro: 0.2s;
+  --dur-fast: 0.35s;
+  --dur-base: 0.6s;
+  --dur-primary: 1s;
+  --dur-scene: 1.6s;
+
+  /* curves */
+  --ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --ease-in: cubic-bezier(0.45, 0, 0.8, 0.55);
+  --ease-move: cubic-bezier(0.65, 0, 0.25, 1);
+  --ease-soft: cubic-bezier(0.45, 0, 0.55, 1);
+
+  /* stagger: time between one element and the next of a group */
+  --stagger-tight: 0.03s;
+  --stagger-base: 0.06s;
+  --stagger-loose: 0.09s;
+
+  /* delay: beats between one movement and the one that follows */
+  --delay-hair: 0.05s;
+  --delay-short: 0.1s;
+  --delay-base: 0.2s;
+  --delay-mid: 0.4s;
+  --delay-long: 0.6s;
+
+  /* rules */
+  --exit-ratio: 0.8;          /* what leaves takes this part of the time of what arrives */
+  --travel-ref: 240;          /* px: the distance a movement of its normal duration covers */
+  --hold: 0.15s;              /* a held page rests this long before the next gesture counts */
+  --follow-rate: 6.3;         /* per second: how fast a scroll-following loop catches up (Lenis lerp 0.1) */
+}

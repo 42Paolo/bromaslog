@@ -17,7 +17,8 @@
 (function () {
   'use strict';
   var section = document.getElementById('visione');
-  if (!section) return;
+  var M = window.BromaslogMotion;
+  if (!section || !M) return;
   var stage = section.querySelector('.vision-stage');
   var wordEls = Array.prototype.slice.call(section.querySelectorAll('.v-word'));
   var lineEl = section.querySelector('.v-line');
@@ -175,13 +176,13 @@
     last = performance.now();
     raf = window.requestAnimationFrame(loop);
   }
-  // the painting follows the scroll position with a short ease, so it never jumps; it only runs while it has somewhere to go
+  // the painting follows the scroll position with the site's scroll smoothing, so it never jumps; it only runs while it has somewhere to go
   function loop(now) {
     var dt = Math.min(0.1, (now - last) / 1000);
     last = now;
     var d = target - cur;
     if (Math.abs(d) < 0.00005) { cur = target; raf = 0; render(); return; }
-    cur += d * Math.min(1, dt * 7);
+    cur += d * Math.min(1, dt * M.follow);                  // the same smoothing as the wheel (Lenis lerp 0.1), see css/motion.css
     render();
     raf = window.requestAnimationFrame(loop);
   }

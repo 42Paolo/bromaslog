@@ -9,6 +9,7 @@
 (function () {
   'use strict';
   var gsap = window.gsap;
+  var M = window.BromaslogMotion;
   var section = document.getElementById('chi-siamo');
   if (!gsap || !section) return;
 
@@ -66,9 +67,10 @@
     if (revealed) return;
     revealed = true;
     var label = wordsOf('0'), title = wordsOf('1'), body = wordsOf('2');
-    if (label.length) gsap.to(label, { opacity: 1, duration: 0.8, ease: 'power1.out', stagger: 0.08 });
-    if (title.length) gsap.to(title, { opacity: 1, duration: 0.7, ease: 'power1.out', stagger: 0.09, delay: 0.15 });
-    if (body.length) gsap.to(body, { opacity: 1, duration: 0.6, ease: 'power1.out', stagger: Math.min(0.03, 1.8 / body.length), delay: 0.7 });   // long texts are written faster, so it never drags
+    // every word fades in over the same time (base); the pace of the words follows the size of the text: small label, large headline, long body
+    if (label.length) gsap.to(label, { opacity: 1, duration: M.dur.base, ease: M.ease.soft, stagger: M.stagger.base });
+    if (title.length) gsap.to(title, { opacity: 1, duration: M.dur.base, ease: M.ease.soft, stagger: M.stagger.loose, delay: M.delay.short });
+    if (body.length) gsap.to(body, { opacity: 1, duration: M.dur.base, ease: M.ease.soft, stagger: Math.min(M.stagger.tight, 1.8 / body.length), delay: M.delay.long });   // long texts are written faster, so it never drags
   }
 
   function rebuild() {

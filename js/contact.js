@@ -19,6 +19,7 @@
   'use strict';
 
   var gsap = window.gsap;
+  var M = window.BromaslogMotion;
   var nav = document.getElementById('nav');
   var panel = document.getElementById('contact-panel');
   var trigger = document.getElementById('contact-trigger');
@@ -29,9 +30,9 @@
     widthRatio: 1 / 3,                  // the panel is a third of the page wide...
     minWidth: 440, maxWidth: 720,       // ...but never narrower / wider than this (design px: scaled by --vr like everything else)
     mobileBreakpoint: 640,              // at or below this page width the panel spans the whole width
-    sectionDuration: 0.9,               // every section (intro, form, details) writes all its texts together in this time (s)...
+    sectionDuration: M.dur.primary,     // every section (intro, form, details) writes all its texts together in this time (s)...
     maxPerChar: 0.05,                   // ...but a short text never types slower than this (s per character)
-    sectionStagger: 0.14,               // the sections start almost together: this much after one another (s)
+    sectionStagger: M.delay.short + M.delay.hair,        // the sections start almost together: this much after one another (s)
     panelBg: 'rgba(11, 12, 14, 0.94)',  // bar colour once it has become the panel
     barBg: 'rgba(10, 11, 13, 0.90)'     // must match .glass-nav in css/site.css
   };
@@ -247,7 +248,7 @@
       gsap.set(linkEls, { autoAlpha: 0 });
       gsap.set(scrim, { autoAlpha: 1 });
       showAllText();
-      gsap.fromTo(panel, { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.25, onComplete: finishOpen });
+      gsap.fromTo(panel, { autoAlpha: 0 }, { autoAlpha: 1, duration: M.dur.fast, ease: M.ease.soft, onComplete: finishOpen });
       return;
     }
 
@@ -255,24 +256,27 @@
     gsap.set(sendBtn, { clipPath: 'inset(0 100% 0 0 round 6px)' });
     gsap.set(rules, { scaleX: 0 });
 
+    // the bar grows in the primary time, a little longer or shorter for a bigger or smaller panel; the content starts when it is half grown
+    var grow = M.travel(Math.hypot(to.w - from.w, to.h - from.h), M.dur.primary);
+    var mid = grow * 0.5;
     openTl = gsap.timeline({ onComplete: finishOpen });
     openTl
       // page behind: darker + blurred
-      .to(scrim, { autoAlpha: 1, duration: 0.8, ease: 'power2.out' }, 0)
+      .to(scrim, { autoAlpha: 1, duration: M.dur.base, ease: M.ease.soft }, 0)
       // the labels slide up and out (the bar's top edge clips them) ...
-      .to(linkEls, { yPercent: -160, autoAlpha: 0, duration: 0.5, ease: 'power3.in', stagger: 0.055 }, 0)
-      // ... while the bar grows: wider and taller at the same time, anchored top-right
-      .to(nav, { width: to.w, duration: 1.0, ease: 'expo.inOut' }, 0.06)
-      .to(nav, { height: to.h, duration: 1.1, ease: 'expo.inOut' }, 0.1)
-      .to(nav, { backgroundColor: CFG.panelBg, duration: 0.7, ease: 'power2.out' }, 0.2)
+      .to(linkEls, { yPercent: -160, autoAlpha: 0, duration: M.exit(M.dur.base), ease: M.ease.in, stagger: M.stagger.base }, 0)
+      // ... while the bar grows: wider and taller at the same time (one movement: same time, same curve), anchored top-right
+      .to(nav, { width: to.w, duration: grow, ease: M.ease.move }, M.delay.hair)
+      .to(nav, { height: to.h, duration: grow, ease: M.ease.move }, M.delay.hair)
+      .to(nav, { backgroundColor: CFG.panelBg, duration: M.dur.base, ease: M.ease.soft }, M.delay.base)
       // content
-      .set(panel, { autoAlpha: 1 }, 0.5)
-      .call(function () { panel.focus({ preventScroll: true }); }, null, 0.52)
-      .to(boxes, { autoAlpha: 1, y: 0, duration: 0.75, ease: 'power3.out', stagger: 0.06 }, 0.6)
-      .to(rules, { scaleX: 1, duration: 0.9, ease: 'expo.out', stagger: 0.09 }, 0.75)
-      .to(sendBtn, { clipPath: 'inset(0 0% 0 0 round 6px)', duration: 0.8, ease: 'power3.inOut' }, 0.95)
+      .set(panel, { autoAlpha: 1 }, mid)
+      .call(function () { panel.focus({ preventScroll: true }); }, null, mid + 0.02)
+      .to(boxes, { autoAlpha: 1, y: 0, duration: M.dur.base, ease: M.ease.out, stagger: M.stagger.base }, mid + M.delay.short)
+      .to(rules, { scaleX: 1, duration: M.dur.base, ease: M.ease.out, stagger: M.stagger.loose }, mid + M.delay.base)
+      .to(sendBtn, { clipPath: 'inset(0 0% 0 0 round 6px)', duration: M.dur.base, ease: M.ease.move }, mid + M.delay.mid)
       // the writing
-      .add(typingTween(), 0.85);
+      .add(typingTween(), mid + M.delay.mid);
   }
 
   function finishOpen() {
@@ -299,12 +303,15 @@
       return;
     }
 
+    // closing is the opening backwards, but quicker (exit = x 0.8); the scrim and the bar finish together
+    var opened = targetSize();
+    var shrink = M.exit(M.travel(Math.hypot(opened.w - from.w, opened.h - from.h), M.dur.primary));
     gsap.timeline({ onComplete: finishClose })
-      .to(panel, { autoAlpha: 0, duration: 0.22, ease: 'power2.in' }, 0)
-      .to(nav, { width: from.w, height: from.h, duration: 0.85, ease: 'expo.inOut' }, 0.1)
-      .to(nav, { backgroundColor: CFG.barBg, duration: 0.5, ease: 'power2.inOut' }, 0.2)
-      .to(scrim, { autoAlpha: 0, duration: 0.7, ease: 'power2.inOut' }, 0.15)
-      .to(linkEls, { yPercent: 0, autoAlpha: 1, duration: 0.55, ease: 'power3.out', stagger: 0.055 }, 0.7);
+      .to(panel, { autoAlpha: 0, duration: M.dur.micro, ease: M.ease.in }, 0)
+      .to(nav, { width: from.w, height: from.h, duration: shrink, ease: M.ease.move }, M.delay.short)
+      .to(nav, { backgroundColor: CFG.barBg, duration: M.exit(M.dur.base), ease: M.ease.soft }, M.delay.base)
+      .to(scrim, { autoAlpha: 0, duration: shrink, ease: M.ease.soft }, M.delay.short)
+      .to(linkEls, { yPercent: 0, autoAlpha: 1, duration: M.dur.base, ease: M.ease.out, stagger: M.stagger.base }, M.delay.long);
   }
 
   function finishClose() {
@@ -374,7 +381,7 @@
   function setStatus(msg, kind) {
     status.textContent = msg;
     if (kind) status.setAttribute('data-state', kind); else status.removeAttribute('data-state');
-    gsap.fromTo(status, { autoAlpha: 0, y: 6 }, { autoAlpha: 1, y: 0, duration: 0.4, ease: 'power2.out', clearProps: 'transform' });
+    gsap.fromTo(status, { autoAlpha: 0, y: 6 }, { autoAlpha: 1, y: 0, duration: M.dur.fast, ease: M.ease.out, clearProps: 'transform' });
   }
 
   var SUBJECT = 'Nuova richiesta dal sito Bromaslog';

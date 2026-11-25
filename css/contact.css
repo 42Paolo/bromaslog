@@ -64,9 +64,9 @@ html.is-contact-open { overflow: hidden; }
   border: 1px solid rgba(255, 255, 255, .14);
   border-radius: calc(8 * var(--vr));
   cursor: pointer;
-  transition: background-color .2s ease, border-color .2s ease;
+  transition: background-color var(--dur-micro) var(--ease-out), border-color var(--dur-micro) var(--ease-out);
 }
-.panel-close svg { width: calc(16 * var(--vr)); height: calc(16 * var(--vr)); fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; transition: transform .35s cubic-bezier(.2, .7, .2, 1); }
+.panel-close svg { width: calc(16 * var(--vr)); height: calc(16 * var(--vr)); fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; transition: transform var(--dur-fast) var(--ease-out); }
 .panel-close:hover { background: rgba(255, 255, 255, .1); border-color: rgba(255, 255, 255, .28); }
 .panel-close:hover svg { transform: rotate(90deg); }
 .panel-close:focus-visible, .btn-send:focus-visible, .contact-list a:focus-visible { outline: 2px solid var(--paper); outline-offset: 2px; }
@@ -107,7 +107,7 @@ html.is-contact-open { overflow: hidden; }
   border: 1px solid rgba(255, 255, 255, .14);
   border-radius: calc(6 * var(--vr));
   outline: none;
-  transition: border-color .2s ease, background-color .2s ease;
+  transition: border-color var(--dur-micro) var(--ease-out), background-color var(--dur-micro) var(--ease-out);
 }
 .field textarea { height: calc(100 * var(--vr)); padding-top: calc(28 * var(--vr)); resize: none; }
 .field input:focus,
@@ -124,7 +124,7 @@ html.is-contact-open { overflow: hidden; }
   color: rgba(255, 255, 255, .62);
   pointer-events: none;
   transform-origin: left top;
-  transition: transform .25s cubic-bezier(.2, .7, .2, 1), color .2s ease;
+  transition: transform var(--dur-micro) var(--ease-out), color var(--dur-micro) var(--ease-out);
 }
 .field--area label { top: calc(19 * var(--vr)); }
 .field input:focus + label,
@@ -148,11 +148,11 @@ html.is-contact-open { overflow: hidden; }
   border: 0;
   border-radius: calc(6 * var(--vr));
   cursor: pointer;
-  transition: background-color .2s ease;
+  transition: background-color var(--dur-micro) var(--ease-out);
 }
 .btn-send:hover { background: #fff; }
 .btn-send:disabled { opacity: .6; cursor: progress; }
-.btn-send svg { width: calc(16 * var(--vr)); height: calc(16 * var(--vr)); fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; transition: transform .25s ease; }
+.btn-send svg { width: calc(16 * var(--vr)); height: calc(16 * var(--vr)); fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; transition: transform var(--dur-micro) var(--ease-out); }
 .btn-send:hover svg { transform: translateX(4px); }
 
 .form-status { min-height: 1.4em; margin: 0; font: 400 calc(13 * var(--vr)) / 1.4 var(--font-sans); color: rgba(242, 240, 235, .75); }

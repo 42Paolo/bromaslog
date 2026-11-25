@@ -5,9 +5,10 @@
  *
  * It is a one-shot sequence started by a scroll attempt, NOT scrubbed: once started it runs at its own speed, and the page cannot move
  * on until it has finished. A small state machine drives it: INITIAL -> FWD -> FINAL -> REV -> INITIAL.
- *   - Scrolling DOWN past the page while in INITIAL plays the sequence forward (about 3 s).
- *   - Scrolling back UP past the page while in FINAL plays it backwards (half the time).
- *   - Arriving on the page never starts anything by itself: the page rests there (~0.5 s) and a new scroll gesture is needed.
+ *   - Scrolling DOWN past the page while in INITIAL plays the sequence forward (one scene: 1.6 s).
+ *   - Scrolling back UP past the page while in FINAL plays it backwards (quicker, like every exit: x 0.8 of the time).
+ *   All times, curves and staggers come from the motion tokens (css/motion.css, js/motion.js).
+ *   - Arriving on the page never starts anything by itself: the page rests there for a moment (the hold token) and a new scroll gesture is needed.
  *
  * One GSAP timeline holds everything, so reversing it is simply timeline.reverse():
  *   - headline: FLIP, every word travels from its place in the three lines to its place in the one-line layout and grows to the final size;
@@ -23,6 +24,7 @@
 (function () {
   'use strict';
   var gsap = window.gsap;
+  var M = window.BromaslogMotion;
   var root = document.documentElement;
   var section = document.getElementById('chi-siamo');
   var hero = document.querySelector('.site-hero');
@@ -37,7 +39,7 @@
   var machine3 = section && section.querySelector('.about-machine.am-third');
   var media3 = machine3 && machine3.querySelector('.am-media');
   var copy3 = machine3 && machine3.querySelector('.am-copy');
-  if (!gsap || !section || !hero || !title || !cols || !machine || !media || !copy || !machine2 || !media2 || !copy2 || !machine3 || !media3 || !copy3) return;
+  if (!gsap || !M || !section || !hero || !title || !cols || !machine || !media || !copy || !machine2 || !media2 || !copy2 || !machine3 || !media3 || !copy3) return;
   var machines = [machine, machine2, machine3], medias = [media, media2, media3], copies = [copy, copy2, copy3];
   var imgs = medias.map(function (m) { return m.querySelector('.am-img'); });
 
@@ -48,9 +50,9 @@
   var desktop = window.matchMedia ? window.matchMedia('(min-width: 768px)') : { matches: true };
   var lenis = window.bromaslogLenis || null;
 
-  var HOLD = 150;               // ms the page rests on arrival before a scroll attempt counts
+  var HOLD = Math.round(M.hold * 1000);   // ms the page rests on arrival before a scroll attempt counts
   var FRESH_GAP = 100;          // ms of silence that make a wheel event a new gesture (not the tail of a trackpad flick)
-  var REVERSE_SPEED = 2;        // the way back runs twice as fast
+  var REVERSE_SPEED = 1 / M.exitRatio;    // the way back is quicker, like every exit (x 0.8 of the time)
   var CELL = 3;                 // size of the dissolve squares, in CSS px
   var DRIFT = 7;                // how far a square wanders, in CSS px
 
@@ -63,9 +65,8 @@
   var lastY = window.pageYOffset;
   var touchY = null;
   var tl = null, tlS = null, slideTw = null;     // tl: the first sequence; tlS: the carousel (one timeline, SLIDE seconds per step)
-  var SLIDE = 2.6;
-  var CAROUSEL_SPEED = 2.4;      // the change between two machines runs 2.4x faster than the timeline's own seconds (about 1.1 s)
-  var CAROUSEL_BACK = 2.8;       // and a little faster on the way back (about 0.9 s)
+  var SCENE = M.dur.scene;       // the first sequence (headline, photo, text change) is one scene
+  var SLIDE = M.dur.primary;     // the change from one machine to the next is the main movement of the page: one step of the carousel
   var dirty = false;            // a resize / language change came while the sequence was running
   var fx = { old: 0, neu: 0, s2: 0, s3: 0 };  // progress of the square transitions, and of the two carousel steps
 
@@ -359,34 +360,39 @@
     // (every tween has its start value written out, so a rebuild never starts from what the previous timeline left behind)
     var N0 = { immediateRender: false };
     tl = gsap.timeline({ paused: true, onUpdate: render, onComplete: onForwardDone, onReverseComplete: onReverseDone });
+    // The scene lasts SCENE seconds; its parts are shares of it (they keep the proportions of the first version, which ran 3 s).
+    // Headline and photo move with the same curve; the two dissolves overlap in the middle, so the text changes while they travel.
     info.list.forEach(function (d, i) {                                              // headline: three lines -> one line
-      tl.fromTo(d.el, { x: 0, y: 0, scale: 1 }, Object.assign({ x: d.x, y: d.y, scale: d.scale, duration: 2.1, ease: 'power3.inOut' }, N0), i * 0.06);
+      tl.fromTo(d.el, { x: 0, y: 0, scale: 1 }, Object.assign({ x: d.x, y: d.y, scale: d.scale, duration: SCENE * 0.7, ease: M.ease.move }, N0), i * M.stagger.base);
     });
-    tl.fromTo(media, { y: dy }, Object.assign({ y: 0, duration: 2.6, ease: 'power3.inOut' }, N0), 0.2);   // photo rises
-    tl.fromTo(fx, { old: 0 }, Object.assign({ old: 1, duration: 0.85, ease: 'power1.inOut' }, N0), 1.2);  // old text dissolves
-    tl.fromTo(fx, { neu: 0 }, Object.assign({ neu: 1, duration: 0.9, ease: 'power1.inOut' }, N0), 1.95);  // machine text assembles
-    tl.to({}, { duration: 0.1 }, 2.85);                                              // settle
+    tl.fromTo(media, { y: dy }, Object.assign({ y: 0, duration: SCENE * 0.88, ease: M.ease.move }, N0), SCENE * 0.07);   // photo rises
+    tl.fromTo(fx, { old: 0 }, Object.assign({ old: 1, duration: SCENE * 0.29, ease: M.ease.soft }, N0), SCENE * 0.4);    // old text dissolves
+    tl.fromTo(fx, { neu: 0 }, Object.assign({ neu: 1, duration: SCENE * 0.3, ease: M.ease.soft }, N0), SCENE * 0.66);    // machine text assembles
+    tl.to({}, { duration: 0.1 }, SCENE - 0.1);                                       // settle: the scene ends exactly at SCENE
 
     // Carousel, one timeline for both steps (SLIDE seconds each): the current machine slides out to the left, the next comes in from the
     // right (photos with a little depth between them, the text lines follow one after the other). The text of the machine that leaves
     // is gone before the next photo reaches its column, and the new text only appears once that photo has cleared its column.
+    // Photos, their text and the fade values all move in the same step: the parts are shares of SLIDE, the way back is the same step
+    // played quicker (exit).
     var out = left + media.offsetWidth + 60;
-    var E = 'power3.inOut', NI = { immediateRender: false };
+    var E = M.ease.move, NI = { immediateRender: false };
+    var travel = SLIDE * 0.65;                                                       // a photo crosses the page in this time
     tlS = gsap.timeline({ paused: true, onUpdate: render });
     function step(t0, a, b, key) {
-      tlS.fromTo(medias[a], { x: 0 }, Object.assign({ x: -out, duration: 1.6, ease: E }, NI), t0);
-      tlS.fromTo(imgs[a], { x: 0 }, Object.assign({ x: -110, duration: 1.6, ease: E }, NI), t0);
-      tlS.fromTo(medias[b], { x: section.clientWidth - left }, Object.assign({ x: 0, duration: 1.6, ease: E }, NI), t0 + 0.1);
-      tlS.fromTo(imgs[b], { x: 140 }, Object.assign({ x: 0, duration: 1.6, ease: E }, NI), t0 + 0.1);
-      tlS.fromTo(kids[a], { x: 0, opacity: 1 }, Object.assign({ x: -60, opacity: 0, duration: 0.35, ease: 'power2.in', stagger: 0.03 }, NI), t0);
-      tlS.fromTo(kids[b], { x: 70, opacity: 0 }, Object.assign({ x: 0, opacity: 1, duration: 0.8, ease: 'power3.out', stagger: 0.06 }, NI), t0 + 1.45);
+      tlS.fromTo(medias[a], { x: 0 }, Object.assign({ x: -out, duration: travel, ease: E }, NI), t0);
+      tlS.fromTo(imgs[a], { x: 0 }, Object.assign({ x: -110, duration: travel, ease: E }, NI), t0);
+      tlS.fromTo(medias[b], { x: section.clientWidth - left }, Object.assign({ x: 0, duration: travel, ease: E }, NI), t0 + M.delay.hair);
+      tlS.fromTo(imgs[b], { x: 140 }, Object.assign({ x: 0, duration: travel, ease: E }, NI), t0 + M.delay.hair);
+      tlS.fromTo(kids[a], { x: 0, opacity: 1 }, Object.assign({ x: -60, opacity: 0, duration: M.dur.micro, ease: M.ease.in, stagger: M.stagger.tight }, NI), t0);
+      tlS.fromTo(kids[b], { x: 70, opacity: 0 }, Object.assign({ x: 0, opacity: 1, duration: M.dur.fast, ease: M.ease.out, stagger: M.stagger.base }, NI), t0 + SLIDE * 0.56);
       var from = {}; from[key] = 0;
-      var to = { duration: 1.7, ease: 'none' }; to[key] = 1;
+      var to = { duration: travel, ease: M.ease.linear }; to[key] = 1;
       tlS.fromTo(fx, from, Object.assign(to, NI), t0);
     }
     step(0, 0, 1, 's2');
     step(SLIDE, 1, 2, 's3');
-    tlS.to({}, { duration: 0.05 }, 2 * SLIDE);                                      // settle (the timeline reaches the end of step 2)
+    tlS.to({}, { duration: 0.02 }, 2 * SLIDE);                                      // settle (the timeline reaches the end of step 2)
     return true;
   }
 
@@ -473,8 +479,9 @@
     if (next === 'FWD') tl.timeScale(1).play(0);
     else if (next === 'REV') tl.timeScale(REVERSE_SPEED).reverse(tl.duration());
     else {                                                           // a carousel step: the playhead of the carousel timeline travels between the two times
-      var go = { FWD2: [0, SLIDE, onForward2Done, CAROUSEL_SPEED], REV2: [SLIDE, 0, onReverse2Done, CAROUSEL_BACK], FWD3: [SLIDE, 2 * SLIDE, onForward3Done, CAROUSEL_SPEED], REV3: [2 * SLIDE, SLIDE, onReverse3Done, CAROUSEL_BACK] }[next];
-      slideTw = tlS.tweenFromTo(go[0], go[1], { duration: SLIDE / go[3], ease: 'none', onComplete: go[2] });
+      var back = M.exit(SLIDE);
+      var go = { FWD2: [0, SLIDE, onForward2Done, SLIDE], REV2: [SLIDE, 0, onReverse2Done, back], FWD3: [SLIDE, 2 * SLIDE, onForward3Done, SLIDE], REV3: [2 * SLIDE, SLIDE, onReverse3Done, back] }[next];
+      slideTw = tlS.tweenFromTo(go[0], go[1], { duration: go[3], ease: 'none', onComplete: go[2] });
     }
   }
 

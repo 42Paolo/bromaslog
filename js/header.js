@@ -2,13 +2,14 @@
  * Header behaviour while scrolling (the logic is icomat.co.uk's, read from the live site; the rising speed is ours):
  *   - scrolling DOWN: the brand and the navigation bar rise out of the screen at 80% of the scroll speed
  *     (scroll 100px, the bar rises 80px), so the movement follows your hand and is as smooth as the scroll itself;
- *   - scrolling UP:   they slide back in (0.5s, power1.out, as on icomat).
+ *   - scrolling UP:   they slide back in (motion tokens: fast, adjusted to the distance, out curve; see css/motion.css).
  * A change of direction counts only after 50px of scrolling have accumulated since the last one, so small
  * movements or jitter never make it flicker (same constant as icomat).
  */
 (function () {
   'use strict';
   var gsap = window.gsap;
+  var M = window.BromaslogMotion;
   var header = document.querySelector('.site-header');
   var brand = document.querySelector('.site-brand');
   var bar = document.getElementById('nav');
@@ -34,13 +35,14 @@
     if (next === offset) return;
     offset = next;
     // a short tween per update softens the 50px head start and any irregular wheel step
-    gsap.to(targets, { y: -offset, duration: 0.35, ease: 'power3.out', overwrite: true });
+    gsap.to(targets, { y: -offset, duration: M.dur.fast, ease: M.ease.out, overwrite: true });
   }
 
   function show() {
     if (offset === 0) return;
+    var way = offset;
     offset = 0;
-    gsap.to(targets, { y: 0, duration: 0.5, ease: 'power1.out', overwrite: true, onComplete: function () { gsap.set(targets, { clearProps: 'transform' }); } });
+    gsap.to(targets, { y: 0, duration: M.travel(way, M.dur.fast), ease: M.ease.out, overwrite: true, onComplete: function () { gsap.set(targets, { clearProps: 'transform' }); } });
   }
 
   function onScroll() {

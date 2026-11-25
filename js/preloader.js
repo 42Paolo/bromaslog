@@ -20,26 +20,22 @@
 
   var CONFIG = {
     direction: 'top',        // 'top' = fill comes from the top, parts slide in from above · 'bottom' = the opposite
-    // Calm pacing, a little faster than the first slow version. Lower = slower; every duration is divided by these.
-    // (The reference's own speeds are 1.8 and 2: set logoSpeed 1.8, waveSpeed 2, exitOffset -0.25, partsExitDelay 0.5 for that.)
-    logoSpeed: 1.6,          // timeScale of the logo parts: each part takes ~0.75s to build
-    waveSpeed: 1.1,          // timeScale of the dark fill: ~1.1s to cover the screen, ~0.9s to fade out
+    // Pacing comes from the motion tokens (css/motion.css), like every other animation of the site:
+    //   each logo part builds in "base"; BRO, MAS, LOG follow one another every "delay.base" after a "delay.short" start;
+    //   the dark fill covers the screen in "primary" (its arch lags by a quarter of it) and fades out in "primary";
+    //   the parts leave in "exit(base)", starting "exit(primary)" after the fill (it covers them first).
     exitOffset: 0.1,         // the fill starts this long after the logo is complete (negative = it starts just before, overlapping the end)
-    partsExitDelay: 0.8,     // after the fill starts, the parts start leaving this late (s): the fill covers them first
     respectReducedMotion: true,   // false = always play the full animation, even if the visitor's system asks for less motion
     maxWaitMs: 6000,         // failsafe: never hold the visitor longer than this waiting for "ready"
     logo: {
       vbW: 327.13, vbH: 225.25,   // logo viewBox
       pad: 60,                    // canvas padding above/below the logo (units), must match CSS aspect-ratio
       shift: 40,                  // how far a part slides while entering/leaving (units)
-      start: 0.1,                 // delay before the first part
-      stagger: 0.2,               // seconds between BRO → MAS → LOG, on the way in and on the way out (reference: ~0.1)
       ink: '8, 8, 8'              // #080808
     },
     fill: {
       levelFrom: -0.55, levelTo: 3.0,   // how far the dark has advanced (-0.55: a faint hint at the corners, 3.0: everything)
       depthFrom: 1.3, depthTo: 0.3,     // how much later the middle is covered than the sides (arch depth)
-      rampIn: 0.2,                      // seconds to fade the first hint in, so it never "pops"
       color: [8 / 255, 8 / 255, 8 / 255]
     }
   };
@@ -99,7 +95,8 @@
   }
 
   // Without GSAP we must never trap the visitor behind the preloader.
-  if (!window.gsap) { finish(); initBackgroundGif(); return; }
+  if (!window.gsap || !window.BromaslogMotion) { finish(); initBackgroundGif(); return; }
+  var M = window.BromaslogMotion;
 
   if (site) site.setAttribute('inert', '');
 
@@ -168,7 +165,7 @@
     parts.forEach(function (p) { p.y = 0; p.gl = 0; p.gr = 1; p.a = 1; });
     drawLogo();
     pageReady.then(function () {
-      gsap.to(el, { opacity: 0, duration: 0.4, ease: 'none', onComplete: finish });
+      gsap.to(el, { opacity: 0, duration: M.dur.fast, ease: M.ease.soft, onComplete: finish });
     });
     return;
   }
@@ -297,20 +294,18 @@
     return;
   }
 
-  var LS = CONFIG.logoSpeed;
-  var WS = CONFIG.waveSpeed;
   var DIR = FROM_TOP ? 1 : -1;   // +1: parts travel downward, -1: upward
   var introEnd = [];             // when (s, on the intro timeline) each part has finished entering
 
   // 1–2. BRO, MAS, LOG appear one after another, each sliding in a little and widening from its centre.
   var intro = gsap.timeline({ onUpdate: drawLogo });
   parts.forEach(function (p, i) {
-    var at = L.start + i * L.stagger;
+    var at = M.delay.short + i * M.delay.base;
     p.y = -DIR * L.shift;
-    intro.fromTo(p, { y: -DIR * L.shift }, { y: 0, duration: 1 / LS, ease: 'power1.out' }, at)
-      .fromTo(p, { gl: 0.5, a: 0 }, { gl: 0, a: 1, duration: 1.2 / LS, ease: 'power2.out' }, at)
-      .fromTo(p, { gr: 0.5 }, { gr: 1, duration: 1.2 / LS, ease: 'power2.out' }, at);
-    introEnd.push(at + 1.2 / LS);
+    intro.fromTo(p, { y: -DIR * L.shift }, { y: 0, duration: M.dur.base, ease: M.ease.out }, at)
+      .fromTo(p, { gl: 0.5, a: 0 }, { gl: 0, a: 1, duration: M.dur.base, ease: M.ease.out }, at)
+      .fromTo(p, { gr: 0.5 }, { gr: 1, duration: M.dur.base, ease: M.ease.out }, at);
+    introEnd.push(at + M.dur.base);
   });
 
   // 3–4. The dark fill grows from the sides toward the middle, then fades out to reveal the site.
@@ -324,23 +319,24 @@
 
     // The parts are covered by the fill; they only start leaving once it is about to reach the middle.
     parts.forEach(function (p, i) {
-      var at = CONFIG.partsExitDelay + i * L.stagger;
-      ex.to(p, { gl: 0.5, gr: 0.5, a: 0, duration: 1.2 / LS, ease: 'power2.inOut' }, at)
-        .to(p, { y: DIR * L.shift, duration: 1.2 / LS, ease: 'power2.inOut' }, at);
+      var at = M.exit(M.dur.primary) + i * M.delay.base;
+      ex.to(p, { gl: 0.5, gr: 0.5, a: 0, duration: M.exit(M.dur.base), ease: M.ease.move }, at)
+        .to(p, { y: DIR * L.shift, duration: M.exit(M.dur.base), ease: M.ease.move }, at);
     });
 
-    ex.to(fill, { alpha: 1, duration: F.rampIn, ease: 'none' }, 0)
-      .to(fill, { level: F.levelTo, duration: 1.2 / WS, ease: 'power1.in' }, 0)
-      .to(fill, { depth: F.depthTo, duration: 1.4 / WS, ease: 'power1.in' }, 0)
+    var archEnd = M.dur.primary * 1.25;                     // the middle of the arch is covered a quarter later than the sides
+    ex.to(fill, { alpha: 1, duration: M.dur.micro, ease: M.ease.linear }, 0)
+      .to(fill, { level: F.levelTo, duration: M.dur.primary, ease: M.ease.in }, 0)
+      .to(fill, { depth: F.depthTo, duration: archEnd, ease: M.ease.in }, 0)
       .to(fill, {
-        alpha: 0, duration: 1 / WS, ease: 'power1.in',
+        alpha: 0, duration: M.dur.primary, ease: M.ease.in,
         onStart: function () {
           // The fill is now 100% opaque: drop the white + logo underneath, then fade the fill out.
           el.classList.add('is-hidden');
           window.dispatchEvent(new CustomEvent('preloader:reveal'));
         },
         onComplete: function () { ex.kill(); intro.kill(); finish(); }
-      }, 1.4 / WS);
+      }, archEnd);
   }
 
   // The exit starts `exitOffset` seconds after the logo is complete, and never before the page is ready.
