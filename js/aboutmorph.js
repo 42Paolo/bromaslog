@@ -50,7 +50,8 @@
   var desktop = window.matchMedia ? window.matchMedia('(min-width: 768px)') : { matches: true };
   var lenis = window.bromaslogLenis || null;
 
-  var HOLD = Math.round(M.hold * 1000);   // ms the page rests on arrival before a scroll attempt counts
+  var HOLD = Math.round(M.hold * 1000);   // ms the page rests after a step before a scroll attempt counts
+  var ARRIVE_REST = Math.round(M.delay.mid * 1000);   // ms the page rests when the visitor has just come onto it: long enough to be seen
   var FRESH_GAP = 100;          // ms of silence that make a wheel event a new gesture (not the tail of a trackpad flick)
   var REVERSE_SPEED = 1 / M.exitRatio;    // the way back is quicker, like every exit (x 0.8 of the time)
   var CELL = 3;                 // size of the dissolve squares, in CSS px
@@ -62,6 +63,9 @@
   var holdUntil = 0;
   var lastWheel = 0;
   var swallowTail = false;      // right after a release: ignore the rest of the gesture that was going on
+  var needFresh = false;        // the visitor has just ARRIVED on the page (from above or below): the scroll that brought them can never start a step,
+                                // only a new gesture (after a pause in the wheel, a new press of a key, a new touch) can
+  var arrivedAt = 0, touchStartAt = 0;
   var lastY = window.pageYOffset;
   var touchY = null;
   var tl = null, tlS = null, slideTw = null;     // tl: the first sequence; tlS: the carousel (one timeline, SLIDE seconds per step)
@@ -442,7 +446,9 @@
 
   function arrive(dir) {
     arrived = dir;
-    holdUntil = Date.now() + HOLD;
+    needFresh = true;
+    arrivedAt = Date.now();
+    holdUntil = arrivedAt + ARRIVE_REST;
     lock(true);
     clampToGate();
     window.requestAnimationFrame(function () { if (arrived && !running()) ensureFx(); });
@@ -450,6 +456,7 @@
 
   function release() {
     arrived = null;
+    needFresh = false;
     swallowTail = true;
     lock(false);
   }
@@ -460,6 +467,7 @@
   function afterStep(down) {
     showState();
     arrived = down ? 'down' : 'up';
+    needFresh = false;                       // (between two steps a new swipe may follow at once: it only has to be a new one)
     holdUntil = Date.now() + HOLD;
     if (dirty) { dirty = false; rebuild(); }
   }
@@ -474,6 +482,7 @@
     if (!tl || running()) return;
     if (dirty) { dirty = false; rebuild(); }
     arrived = null;
+    needFresh = false;
     if (next === 'FWD' || next === 'REV') ensureFx();
     state = next;
     if (next === 'FWD') tl.timeScale(1).play(0);
@@ -491,6 +500,7 @@
     state = STATES[step];
     applyState();
     if (arrived || root.classList.contains('is-about-hold')) release();
+    needFresh = false;
     swallowTail = false;
   }
 
@@ -535,6 +545,10 @@
       swallowTail = false;
     }
     if (!arrived) return;
+    if (needFresh) {                                                        // just arrived with the scroll still going (a big flick, its inertia):
+      if (!fresh) { if (e.cancelable) e.preventDefault(); e.stopPropagation(); return; }   // nothing of it counts; a pause in the wheel ends it
+      needFresh = false;
+    }
     var down = e.deltaY > 0;
     var next = nextState(down);
     if (!next) { attempt(down, e); return; }                                // nothing more that way: the page is let go
@@ -559,13 +573,15 @@
     if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
     var down = e.key === 'ArrowDown' || e.key === 'PageDown' || e.key === 'End' || (e.key === ' ' && !e.shiftKey);
     var up = e.key === 'ArrowUp' || e.key === 'PageUp' || e.key === 'Home' || (e.key === ' ' && e.shiftKey);
+    if (arrived && needFresh && e.repeat && (down || up)) { e.preventDefault(); return; }   // a key held down while arriving does not count: a new press does
     if (down) attempt(true, e);
     else if (up) attempt(false, e);
   }, true);
 
-  window.addEventListener('touchstart', function (e) { touchY = e.touches.length ? e.touches[0].clientY : null; }, { passive: true, capture: true });
+  window.addEventListener('touchstart', function (e) { touchY = e.touches.length ? e.touches[0].clientY : null; touchStartAt = Date.now(); }, { passive: true, capture: true });
   window.addEventListener('touchmove', function (e) {
     if (touchY === null || !e.touches.length) return;
+    if (arrived && needFresh && touchStartAt < arrivedAt) { if (e.cancelable) e.preventDefault(); return; }   // the touch that brought the visitor here is over: a new one is needed
     var dy = touchY - e.touches[0].clientY;                              // positive: finger moving up = scrolling down
     if (Math.abs(dy) < 12) return;
     touchY = e.touches[0].clientY;
