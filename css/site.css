@@ -457,6 +457,35 @@ html.is-about-hold { scrollbar-gutter: stable; }
 }
 .site-footer { z-index: 2; background: #000; }
 
+/* ---------- last page: "La nostra visione", split layout ----------
+   Black page that rises over the white one (stepped rise, js/overlay.js). It is divided in two halves, the same division the rise uses:
+   left half = label on top, headline under the hairline; right half = the fabric still on top, description under the hairline.
+   The two hairlines sit at the same height (58%) with a gap between them, like the bars of likova.space. Sizes follow the site (--vr, --pad-x). */
+.vs { position: relative; min-height: 100vh; min-height: 100svh; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.vs__half { position: relative; display: grid; grid-template-rows: minmax(0, 58fr) minmax(0, 42fr); min-width: 0; }
+.vs__half--text { padding: 0 calc(28 * var(--vr)) 0 var(--pad-x); }
+.vs__half--media { padding: 0 var(--pad-x) 0 calc(28 * var(--vr)); }
+.vs__eyebrow { grid-row: 1; margin: calc(120 * var(--vr)) 0 0; align-self: start; }
+.vs__image { position: absolute; top: 0; left: 0; right: 0; height: calc(58% - 28 * var(--vr)); overflow: hidden; background: #050506; }
+.vs__image img { display: block; width: 100%; height: 100%; object-fit: cover; opacity: .9; }
+.vs__block { grid-row: 2; align-self: start; border-top: 1px solid rgba(242, 240, 235, .32); padding: calc(36 * var(--vr)) 0 calc(56 * var(--vr)); }
+.vs__title { margin: 0; max-width: 11.5em; font-weight: 500; font-size: calc(56 * var(--vr)); line-height: 1.04; letter-spacing: -.03em; text-wrap: balance; }
+.vs__text { margin: 0; max-width: 34em; font: 400 calc(17 * var(--vr)) / 1.55 var(--font-sans); color: rgba(242, 240, 235, .8); }
+.vs__text + .vs__text { margin-top: calc(18 * var(--vr)); color: rgba(242, 240, 235, .56); }
+
+@media (max-width: 767px) {
+  .vs { display: flex; flex-direction: column; padding-bottom: calc(56 * var(--vr)); }
+  .vs__half { display: contents; }
+  .vs__eyebrow { order: 1; margin: calc(96 * var(--vr)) var(--pad-x) calc(28 * var(--vr)); }
+  .vs__image { order: 2; position: relative; height: auto; aspect-ratio: 4 / 3; margin-bottom: calc(28 * var(--vr)); }
+  .vs__block { margin: 0 var(--pad-x); padding: calc(28 * var(--vr)) 0 0; }
+  .vs__block--title { order: 3; }
+  .vs__block--text { order: 4; border-top: 0; padding-top: calc(24 * var(--vr)); }
+  .vs__title { font-size: calc(35 * var(--vr)); max-width: 12em; }
+  .vs__text { font-size: calc(15 * var(--vr)); }
+  .vs__text + .vs__text { margin-top: calc(14 * var(--vr)); }
+}
+
 /* ---------- last page: "La nostra visione" ----------
    Black page that rises over the white one (js/overlay.js). Live (js/vision.js adds .vision-live): a tall section whose stage is held
    on screen while the scroll paints the words. Without JavaScript, or with "reduce motion", it is a plain black screen with the text shown. */
