@@ -458,30 +458,32 @@ html.is-about-hold { scrollbar-gutter: stable; }
 .site-footer { z-index: 2; background: #000; }
 
 /* ---------- last page: "La nostra visione", split layout ----------
-   Black page that rises over the white one (stepped rise, js/overlay.js). It is divided in two halves, the same division the rise uses:
-   left half = label on top, headline under the hairline; right half = the fabric still on top, description under the hairline.
-   The two hairlines sit at the same height (58%) with a gap between them, like the bars of likova.space. Sizes follow the site (--vr, --pad-x). */
-.vs { position: relative; min-height: 100vh; min-height: 100svh; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
-.vs__half { position: relative; display: grid; grid-template-rows: minmax(0, 58fr) minmax(0, 42fr); min-width: 0; }
-.vs__half--text { padding: 0 calc(28 * var(--vr)) 0 var(--pad-x); }
-.vs__half--media { padding: 0 var(--pad-x) 0 calc(28 * var(--vr)); }
-.vs__eyebrow { grid-row: 1; margin: calc(120 * var(--vr)) 0 0; align-self: start; }
-.vs__image { position: absolute; top: 0; left: 0; right: 0; height: calc(58% - 28 * var(--vr)); overflow: hidden; background: #050506; }
-.vs__image img { display: block; width: 100%; height: 100%; object-fit: cover; opacity: .9; }
-.vs__block { grid-row: 2; align-self: start; border-top: 1px solid rgba(242, 240, 235, .32); padding: calc(36 * var(--vr)) 0 calc(56 * var(--vr)); }
-.vs__title { margin: 0; max-width: 11.5em; font-weight: 500; font-size: calc(56 * var(--vr)); line-height: 1.04; letter-spacing: -.03em; text-wrap: balance; }
-.vs__text { margin: 0; max-width: 34em; font: 400 calc(17 * var(--vr)) / 1.55 var(--font-sans); color: rgba(242, 240, 235, .8); }
-.vs__text + .vs__text { margin-top: calc(18 * var(--vr)); color: rgba(242, 240, 235, .56); }
+   Black page that rises over the white one in two halves (js/overlay.js: right half first, left half after it). The title is in the
+   right half and the description in the left one, so the title is seen first. Measures are the white page's: a frame 90vw wide (max 1500px)
+   with 25px inside, top and bottom spacing 10vw (60-170px), the same type sizes. While it rises each block glides a little against its
+   half (--rise, set by js/overlay.js: the title 10% of it, the description 22%) and is exactly in place when the page has covered the
+   screen; then the page is held for a moment (.vs__hold) before the footer. Without that script it is a plain black page. */
+:root { --vs-frame: calc((100vw - min(90vw, 1500px)) / 2 + 25px); --vs-y: clamp(60px, 10vw, 170px); }
+.vs { position: relative; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); min-height: 100vh; min-height: 100svh; padding: var(--vs-y) 0; }
+.vs::before { content: ""; position: absolute; left: 50%; top: 0; bottom: 0; width: 1px; background: rgba(242, 240, 235, .12); }   /* the seam between the halves */
+.vs__title-block { grid-column: 2; grid-row: 1; align-self: start; padding: 0 var(--vs-frame) 0 25px; will-change: transform; transform: translate3d(0, calc(var(--rise, 0px) * .1), 0); }
+.vs__desc { grid-column: 1; grid-row: 1; align-self: end; margin: 0 25px 0 var(--vs-frame); padding-top: 22px; border-top: 1px solid rgba(242, 240, 235, .32); will-change: transform; transform: translate3d(0, calc(var(--rise, 0px) * .22), 0); }
+.vs__eyebrow { display: flex; gap: 1.6em; margin: 0 0 clamp(20px, calc(20px + (100vw - 1024px) * .0192), 30px); line-height: 16px; }
+.vs__idx { font-family: var(--font-mono); font-size: calc(12 * var(--vr)); letter-spacing: .14em; opacity: .6; }
+.vs__desc > .vs__idx { margin: 0 0 22px; }
+.vs__title { margin: 0; font-weight: 500; font-size: clamp(30px, 3.4vw, 58px); line-height: 1.12; letter-spacing: -.025em; text-wrap: balance; }
+.vs__text { margin: 0; max-width: 675px; font: 400 clamp(15px, 1.05vw, 17px) / 1.55 var(--font-sans); color: rgba(242, 240, 235, .78); }
+.vs__text + .vs__text { margin-top: 22.4px; color: rgba(242, 240, 235, .56); }
+.vs__hold { display: none; }
+#visione.is-rising .vs { position: sticky; top: 0; }
+#visione.is-rising .vs__hold { display: block; height: 60vh; height: 60svh; }
 
 @media (max-width: 767px) {
-  .vs { display: flex; flex-direction: column; padding-bottom: calc(56 * var(--vr)); }
-  .vs__half { display: contents; }
-  .vs__eyebrow { order: 1; margin: calc(96 * var(--vr)) var(--pad-x) calc(28 * var(--vr)); }
-  .vs__image { order: 2; position: relative; height: auto; aspect-ratio: 4 / 3; margin-bottom: calc(28 * var(--vr)); }
-  .vs__block { margin: 0 var(--pad-x); padding: calc(28 * var(--vr)) 0 0; }
-  .vs__block--title { order: 3; }
-  .vs__block--text { order: 4; border-top: 0; padding-top: calc(24 * var(--vr)); }
-  .vs__title { font-size: calc(35 * var(--vr)); max-width: 12em; }
+  .vs { display: flex; flex-direction: column; justify-content: flex-start; padding: calc(96 * var(--vr)) var(--pad-x) calc(56 * var(--vr)); }
+  .vs::before { display: none; }
+  .vs__title-block { padding: 0; }
+  .vs__desc { margin: calc(56 * var(--vr)) 0 0; }
+  .vs__title { font-size: calc(35 * var(--vr)); }
   .vs__text { font-size: calc(15 * var(--vr)); }
   .vs__text + .vs__text { margin-top: calc(14 * var(--vr)); }
 }

@@ -45,6 +45,9 @@
     if (!black) return;
     var t = black.getBoundingClientRect().top;                          // distance of the black page from the top of the screen
     stepRise(black, t, false);                                          // the black page rises over the white one: right half first
+    black.classList.add('is-rising');                                   // (the page is held for a moment once it has covered the screen)
+    var rise = Math.min(Math.max(t, 0), h).toFixed(1) + 'px';           // how far it still has to rise: its blocks glide against it by this much
+    if (rise !== black._rise) { black._rise = rise; black.style.setProperty('--rise', rise); }
     var base = Math.min(h, white.getBoundingClientRect().bottom);       // it starts covering when it reaches the white page's bottom edge
     var c = base <= 0 ? 1 : Math.min(1, Math.max(0, (base - t) / base));
     white.style.setProperty('--cover', c.toFixed(3));

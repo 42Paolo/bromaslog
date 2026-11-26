@@ -21,7 +21,7 @@
   <link rel="preload" as="image" href="assets/bg-video-poster.jpg" fetchpriority="high">
   <link rel="stylesheet" href="css/motion.css?v=20261265">
   <link rel="stylesheet" href="css/preloader.css?v=20261150">
-  <link rel="stylesheet" href="css/site.css?v=20261281">
+  <link rel="stylesheet" href="css/site.css?v=20261290">
   <link rel="stylesheet" href="css/contact.css?v=20261260">
 </head>
 <body id="top">
@@ -218,28 +218,24 @@
       </div>
     </section>
 
-    <!-- Last page: "La nostra visione". Black; it rises over the white page (stepped rise, js/overlay.js), so it is reached only by scrolling
-         down from the last machine (DENSITRAX). Split layout: the page is divided in two halves, the same division the rise uses.
-         Left half: label on top, then (under the hairline) the headline. Right half: the fabric still on top, then (under the hairline)
-         the description. On phones the halves stack: label, image, hairline, headline, description. -->
+    <!-- Last page: "La nostra visione". Black; it rises over the white page in two halves (stepped rise, js/overlay.js): the right half
+         first, the left half after it. The title sits in the right half and the description in the left one, so the visitor sees the
+         title first and the description after it. The measures are the white page's (frame, top and bottom spacing, type sizes).
+         Each block also glides a little against its half while it rises and settles exactly in place when the page has covered the
+         screen; then the page is held for a moment (the spacer below) before the footer comes. -->
     <section class="site-section" id="visione" aria-labelledby="vision-title">
       <div class="vs">
-        <div class="vs__half vs__half--text">
-          <p class="sec-eyebrow vs__eyebrow" data-i18n="vision.title" data-reveal>La nostra visione</p>
-          <div class="vs__block vs__block--title">
-            <h2 class="vs__title" id="vision-title" data-i18n="vision.headline" data-reveal>Anticipare le tendenze e guidarle con coraggio.</h2>
-          </div>
+        <div class="vs__title-block">
+          <p class="sec-eyebrow vs__eyebrow"><span class="vs__idx">01</span><span data-i18n="vision.title">La nostra visione</span></p>
+          <h2 class="vs__title" id="vision-title" data-i18n="vision.headline">Anticipare le tendenze e guidarle con coraggio.</h2>
         </div>
-        <div class="vs__half vs__half--media">
-          <div class="vs__image">
-            <img src="assets/fabric-poster-960.webp" srcset="assets/fabric-poster-960.webp 960w, assets/fabric-poster.webp 1672w" sizes="(min-width: 768px) 50vw, 100vw" width="1672" height="941" alt="" loading="lazy" decoding="async">
-          </div>
-          <div class="vs__block vs__block--text">
-            <p class="vs__text" data-i18n="vision.p1" data-reveal>Vogliamo dare energia al mercato con idee innovative che rispondono a bisogni reali, guidando i nostri clienti verso i nuovi orizzonti e le opportunità offerti dalle tecnologie sofisticate dei nostri prodotti.</p>
-            <p class="vs__text" data-i18n="vision.p2" data-reveal>La nostra esperienza e la dedizione all'eccellenza ci permettono di offrire soluzioni all'avanguardia e su misura, che superano le aspettative. Collaborare con noi significa un approccio proattivo e visionario, guidato dalla passione per l'innovazione.</p>
-          </div>
+        <div class="vs__desc">
+          <p class="vs__idx">02</p>
+          <p class="vs__text" data-i18n="vision.p1">Vogliamo dare energia al mercato con idee innovative che rispondono a bisogni reali, guidando i nostri clienti verso i nuovi orizzonti e le opportunità offerti dalle tecnologie sofisticate dei nostri prodotti.</p>
+          <p class="vs__text" data-i18n="vision.p2">La nostra esperienza e la dedizione all'eccellenza ci permettono di offrire soluzioni all'avanguardia e su misura, che superano le aspettative. Collaborare con noi significa un approccio proattivo e visionario, guidato dalla passione per l'innovazione.</p>
         </div>
       </div>
+      <div class="vs__hold" aria-hidden="true"></div>
 
       <!-- The painted words (Direzione. Tensione. Spazio. -> the closing line) are switched off for now. To bring them back, remove the
            comment marks around this block and give the visible headline above another id (this block has the id "vision-title" too);
@@ -295,7 +291,7 @@
   <script src="js/scroll.js?v=20261250"></script>
   <script src="js/header.js?v=20261260"></script>
   <script src="js/textreveal.js?v=20261260"></script>
-  <script src="js/overlay.js?v=20261271"></script>
+  <script src="js/overlay.js?v=20261290"></script>
   <script src="js/aboutmorph.js?v=20261269"></script>
   <script src="js/site.js?v=20261260"></script>
   <script src="js/i18n.js?v=20261280"></script>
