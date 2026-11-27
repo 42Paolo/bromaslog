@@ -1,0 +1,6 @@
+# macOS / tooling
+.DS_Store
+.claude/
+
+# Originals and working files: they stay on this computer and are never published
+source/
