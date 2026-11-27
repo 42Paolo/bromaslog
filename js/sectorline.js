@@ -7,7 +7,9 @@
  *   Phone:   the line runs down the left margin (the halves are stacked there).
  *
  * The tip of the line stays at a fixed height of the window (TIP of its height), so the line is as long as the page has scrolled
- * past that height: scroll down and it grows, scroll up and it retracts. The title of a stop is lit when the tip reaches its label, the
+ * past that height: scroll down and it grows, scroll up and it retracts. In the last stretch before the last stop is at rest the tip goes
+ * down to the bottom edge of the window (TIP_END), so the line is drawn to the bottom of the screen and goes on through the hangar
+ * (js/hangar.js, same tip) to the end of the page. The title of a stop is lit when the tip reaches its label, the
  * description when the tip reaches its first line: the title always comes first, and a screen at rest has both. The positions are
  * measured from the page (so they follow the real texts at any size and in both languages) and measured again when the window, the
  * fonts or the language change. With "reduce motion" the whole line is simply drawn and everything is shown.
@@ -24,11 +26,16 @@
   var reduced = params.get('motion') === 'reduced' ||
     (params.get('motion') !== 'full' && !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches));
 
-  var TIP = 0.8;          // the tip of the line is at this share of the window height, measured from the top of the window
+  var TIP = 0.8;          // the tip of the line is at this share of the window height, measured from the top of the window...
+  var TIP_END = 1;        // ...and by the time the last stop is at rest it has gone down to the bottom edge, so the line runs on to the end of the page
+  var RAMP = 0.2;         // (it takes this many screens of scroll, just before the stop is at rest)
   var sectors = Array.prototype.slice.call(wrap.querySelectorAll('.vs'));
-  var stops = [], total = 0, wrapTop = 0, ready = false;
+  var stops = [], total = 0, wrapTop = 0, lastRest = 0, ready = false;
 
   function clamp(v, lo, hi) { return v < lo ? lo : v > hi ? hi : v; }
+  // where the tip is in the window (share of its height) at this scroll position; js/hangar.js continues the line with the same function
+  function tipShare(y) { return TIP + (TIP_END - TIP) * clamp((y - lastRest) / (RAMP * window.innerHeight) + 1, 0, 1); }
+  window.BromaslogLine = { tipShare: tipShare };
   function px(v) { return Math.round(v) + 0.5; }       // a 1px line sits on a pixel row
 
   function measure() {
@@ -50,6 +57,7 @@
 
     var x = px(phone ? Math.max(4, items[0].xE / 2) : wr.width / 2);
     total = Math.round(wr.height);
+    lastRest = wrapTop + items[items.length - 1].top;     // the scroll position at which the last stop is at rest
     path.setAttribute('d', 'M' + x + ' 0 L' + x + ' ' + total);
     path.style.strokeDasharray = total + ' ' + total;
 
@@ -63,7 +71,8 @@
 
   function render() {
     if (!ready) return;
-    var L = reduced ? total : clamp(window.pageYOffset + TIP * window.innerHeight - wrapTop, 0, total);   // how much of the line is drawn
+    var y = window.pageYOffset;
+    var L = reduced ? total : clamp(y + tipShare(y) * window.innerHeight - wrapTop, 0, total);   // how much of the line is drawn
     path.style.strokeDashoffset = (total - L).toFixed(1);
     if (reduced) return;
     stops.forEach(function (s) {
