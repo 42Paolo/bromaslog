@@ -22,7 +22,7 @@
   <link rel="stylesheet" href="css/motion.css?v=20261265">
   <link rel="stylesheet" href="css/preloader.css?v=20261150">
   <link rel="stylesheet" href="css/site.css?v=20261309">
-  <link rel="stylesheet" href="css/hangar.css?v=20261307">
+  <link rel="stylesheet" href="css/hangar.css?v=20261309">
   <link rel="stylesheet" href="css/contact.css?v=20261260">
 </head>
 <body id="top">
@@ -268,12 +268,14 @@
       <!-- The end of the page: a hangar. The line goes on down the seam where two black doors meet. A sentence sits across the doors, half on
            each (it is lit when the line reaches it, unfolding from the seam outwards); scrolling on, the doors slide apart along the line,
            taking the halves with them, and the video behind starts (from the beginning of assets/video/hangar-1280.mp4, which is the
-           original footage from second 3). Texts in js/i18n.js: hangar.l / hangar.r (the two halves) and hangar.sr (the whole sentence, for
+           original footage from second 3). Behind the doors, over the picture, the word AEROSPACE is already there (the doors uncover it from the
+           middle outwards). Texts in js/i18n.js: hangar.l / hangar.r (the two halves) and hangar.sr (the whole sentence, for
            screen readers). css/hangar.css, js/hangar.js. Without the script it is just the open hangar: the first picture. -->
       <div class="hangar" id="hangar">
         <div class="hangar__stage">
           <video class="hangar__video" muted playsinline loop preload="none" poster="assets/images/hangar-poster.jpg" data-src="assets/video/hangar-1280.mp4" aria-hidden="true"></video>
           <div class="hangar__shade" aria-hidden="true"></div>
+          <div class="hangar__word"><p class="hangar__word-text">AEROSPACE</p></div>
           <div class="hangar__door hangar__door--l" aria-hidden="true"></div>
           <div class="hangar__door hangar__door--r" aria-hidden="true"><span class="hangar__line"></span></div>
           <span class="hangar__margin" aria-hidden="true"></span>
