@@ -1,19 +1,24 @@
 /* ---------- the end of the last page: the hangar ----------
    After the three stops the line goes on, down the seam where two black doors meet. Scrolling on, the doors slide apart along the line
-   (the line splits in two, one half on each door) and the video behind them starts. The stage is held on screen while this happens
-   (position: sticky), so the scroll length is the length of the hangar (260svh = one held screen + 160svh to scroll through).
+   (the line splits in two, one half on each door) and the first picture comes up (AEROSPACE) and starts. Scrolling on again, the second
+   picture (AUTOMOTIVE) rises over it in two halves, the way the black page rose over the white one, and starts. The stage is held on screen
+   during all this (position: sticky), so the scroll length is the length of the hangar (400svh = one held screen + 300svh to scroll through:
+   16svh shut, doors open until 112svh, the first picture until 170svh, the second one rises until 250svh and stays).
    js/hangar.js sets the variables on .hangar__stage from the scroll position, so it also runs backwards:
      --hg-open   0 closed ... 1 open        --hg-edge   the doors' edge lines (0 closed ... 1 as soon as they part)
-     --hg-zoom   the picture settles from 1.16 to 1     --hg-light   it comes up from dark to its own light (a black veil over it, .hangar__dim)
+     --hg-zoom   the first picture settles from 1.16 to 1     --hg-light   it comes up from dark to its own light (a black veil, .hangar__dim)
      --hg-text   the sentence's opacity: 1 closed ... 0 open
+     --hg-b      the second picture: 1 below the stage ... 0 in place      --hg-lag   how far the left half of it is behind the right one (px)
+     --hg-cover  how much the second one covers the first (0 ... 1): the first drifts up a little and darkens
      --hg-a   how far down the line is drawn,   --hg-mx   where the line runs on a phone
    The sentence sits across the doors, half on each side of the seam, 25px from it like the texts of the stops; the halves slide away with the
    doors, growing more transparent as they open. It is lit when the line reaches it (class is-lit on the stage, set by js/hangar.js) and unfolds from the seam outwards, with the
    site's tokens: a block that grows = primary, text that appears = base, what leaves is quicker (x --exit-ratio).
-   Without the script (or with "reduce motion") nothing is held and there are no doors: just the first picture of the video
+   Without the script (or with "reduce motion") nothing is held and there are no doors: the two pictures one under the other, with their words
    (the sentence is still there for screen readers). */
-.hangar { position: relative; z-index: 0; height: 100vh; height: 100svh; background: #000; }
-.hangar__stage { position: relative; height: 100%; overflow: hidden; background: #000; }
+.hangar { position: relative; z-index: 0; background: #000; }
+.hangar__stage { position: relative; overflow: hidden; background: #000; }
+.hangar__scene { position: relative; height: 100vh; height: 100svh; overflow: hidden; background: #000; }
 .hangar__video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; background: #000; }
 .hangar__dim { position: absolute; inset: 0; background: #000; pointer-events: none; opacity: calc(1 - var(--hg-light, 1)); }   /* the picture comes up from the dark: a black veil whose opacity falls (cheaper for the graphics card than a brightness filter on a playing video) */
 .hangar__shade {            /* a vignette: the picture sits in the black of the page */
@@ -34,11 +39,16 @@
   src: url("../assets/fonts/archivo-expanded-bold-latin.woff2") format("woff2");
 }
 .hangar__word { position: absolute; z-index: 1; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: none; }
+.hangar__lockup { position: relative; transform: scale(var(--hg-zoom, 1)); will-change: transform; }
 .hangar__word-text {
   margin: 0; white-space: nowrap; text-transform: uppercase;
   font: 700 clamp(28px, 8.8vw, 200px) / 1 "Archivo Expanded", var(--font-sans); letter-spacing: -.01em; color: #F2F0EB;
-  transform: scale(var(--hg-zoom, 1));
-  will-change: transform;
+}
+/* the index of the sector (01 / 02): small, mono, like the labels above the titles of the stops, in the lower left corner (on the frame of the page,
+   where the picture is darkest because of the vignette), so the word stays alone in the middle */
+.hangar__idx {
+  position: absolute; z-index: 1; left: var(--vs-frame, 5vw); bottom: clamp(22px, 3.6vw, 52px); margin: 0; white-space: nowrap;
+  font-family: var(--font-mono); font-size: calc(12 * var(--vr)); line-height: 16px; letter-spacing: .14em; color: #F2F0EB; opacity: .8;
 }
 
 /* the line, drawn from the top down to --hg-a (a plain end, like the line of the stops) */
@@ -48,16 +58,27 @@
   mask-image: linear-gradient(to bottom, #000 var(--hg-a, 0px), transparent var(--hg-a, 0px));
 }
 
-.hangar--live { height: 260vh; height: 260svh; }
+.hangar--live { height: 400vh; height: 400svh; }
 .hangar--live .hangar__stage { position: sticky; top: 0; height: 100vh; height: 100svh; }
-.hangar--live .hangar__video {
-  transform: scale(var(--hg-zoom, 1.16));
-  will-change: transform;
-}
-.hangar--live .hangar__video { visibility: hidden; }           /* shut doors: nothing of the picture is drawn (no hairline of it at the edges) */
-.hangar--live .hangar__stage.is-open .hangar__video { visibility: visible; }
-.hangar--live .hangar__dim { z-index: 1; will-change: opacity; }
+.hangar--live .hangar__scene { position: absolute; inset: 0; }
+.hangar--live .hangar__video { visibility: hidden; will-change: transform; }                 /* shut doors: nothing of the picture is drawn (no hairline of it at the edges) */
+.hangar--live .hangar__scene--a { z-index: 0; transform: translate3d(0, calc(var(--hg-cover, 0) * -6%), 0); }
+.hangar--live .hangar__scene--a .hangar__video { transform: scale(var(--hg-zoom, 1.16)); }
+.hangar--live .hangar__stage.is-open .hangar__scene--a .hangar__video { visibility: visible; }
+.hangar--live .hangar__scene--a .hangar__lockup { transform: scale(var(--hg-zoom, 1)); }
+.hangar--live .hangar__dim { z-index: 1; will-change: opacity; opacity: calc(1 - var(--hg-light, 1) + var(--hg-cover, 0) * .6); }   /* the veil: dark at first, then the first picture darkens again as the second covers it */
 .hangar--live .hangar__shade { z-index: 1; }
+/* the second picture: it waits below the stage and rises over the first one in two halves (the right half leads, the left one starts --hg-lag px lower: the
+   same stepped rise as the black page, js/overlay.js), settling from a slight zoom */
+.hangar--live .hangar__scene--b {
+  z-index: 1; visibility: hidden; will-change: transform;
+  transform: translate3d(0, calc(var(--hg-b, 1) * 100%), 0);
+  clip-path: polygon(0 var(--hg-lag, 0px), 50% var(--hg-lag, 0px), 50% 0, 100% 0, 100% 100%, 0 100%);
+}
+.hangar--live .hangar__stage.is-b .hangar__scene--b { visibility: visible; }
+.hangar--live .hangar__stage.is-b .hangar__scene--b .hangar__video { visibility: visible; }
+.hangar--live .hangar__scene--b .hangar__video { transform: scale(calc(1 + var(--hg-b, 1) * .14)); }
+.hangar--live .hangar__scene--b .hangar__lockup { transform: scale(calc(1 + var(--hg-b, 1) * .14)); }
 /* the shadow the doors cast on the picture (so they have depth): its own layer, moving with the doors, under the word so the word stays clean */
 .hangar--live .hangar__cast { display: block; position: absolute; z-index: 1; top: 0; bottom: 0; width: 50%; pointer-events: none; opacity: var(--hg-edge, 0); will-change: transform; }
 .hangar--live .hangar__cast--l { left: 0; transform: translate3d(calc(var(--hg-open, 0) * -100%), 0, 0); }
@@ -112,4 +133,5 @@
   .hangar--live .hangar__half--l { padding-left: calc(16 * var(--vr)); padding-right: calc(14 * var(--vr)); }
   .hangar--live .hangar__half--r { padding-right: calc(16 * var(--vr)); padding-left: calc(14 * var(--vr)); }
   .hangar__text { font-size: calc(20 * var(--vr)); max-width: none; }   /* 2 lines on each side, in Italian and English */
+  .hangar__idx { left: calc(16 * var(--vr)); }
 }

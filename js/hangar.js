@@ -1,27 +1,32 @@
 /*
- * The end of the last page: a hangar (css/hangar.css has the picture of it).
- * Below the third stop the stage is held on screen while the page scrolls on, and the scroll does three things, in this order:
+ * The end of the last page: a hangar with the two sectors of the company, one after the other (css/hangar.css has the picture of it).
+ * Below the third stop the stage is held on screen while the page scrolls on, and the scroll does these things, in this order
+ * (lengths in screens of scroll once the stage is held; every one is a function of the scroll position, so all of it runs backwards too):
  *   1. The line of the stops goes on down the seam where two black doors meet, to the bottom edge of the window. Its tip is the tip of
- *      the line of the stops (js/sectorline.js: it goes from 0.8 of the window height to the bottom edge just before the last stop is at rest),
- *      so the two are one line without a break, and when the stage is held the line is complete.
+ *      the line of the stops (js/sectorline.js: it goes from 0.8 of the window height to the bottom edge just before the last stop is at
+ *      rest), so the two are one line without a break, and when the stage is held the line is complete.
  *      The sentence across the doors is lit when the line reaches its top edge (class is-lit), like the titles of the stops, and unfolds
  *      from the seam outwards (css/hangar.css).
- *   2. After a beat (HOLD) the doors slide apart along the line, over OPENED of the held scroll: the line splits in two, one half on
- *      each door; the halves of the sentence go with the doors and grow more transparent as they open; the video behind comes up from dark and settles (a scale from
- *      1.16 to 1, light from .35 to 1).
- *   3. The video plays while the doors are open, and stays there until the page ends.
- * Everything is a function of the scroll position, so it runs backwards too: scroll up and the doors close, the line comes back
- * together; when they are shut again the video stops and rewinds, so each time they open it starts from the beginning. The file is the
- * original footage from second 3 (assets/video/hangar-1280.mp4), so the beginning is second 3.
- * The video is only fetched when the stage is LOAD_AHEAD screens away. With "reduce motion" none of this runs: the hangar is just the
- * first picture of the video, open.
+ *   2. After a beat (HOLD_VH) the doors slide apart along the line, until OPEN_VH: the line splits in two, one half on each door; the halves
+ *      of the sentence go with the doors and grow more transparent as they open; the first picture (AEROSPACE, its word already behind
+ *      the doors) comes up from dark and settles (a scale from 1.16 to 1, a black veil that goes away).
+ *   3. The first video plays while the doors are open.
+ *   4. From B_FROM_VH to B_TO_VH the second picture (AUTOMOTIVE) rises over the first one in two halves, the way the black page rose over the
+ *      white one (the right half leads, the left starts a third of the distance behind); the first picture drifts up a little and darkens
+ *      under it. The second video plays once it is rising, and the first one stops when it is covered.
+ * Scroll back up and everything is undone: the second picture goes down, the doors close, the line comes back together. A video that is
+ * hidden again stops and rewinds, so each time a picture comes in its video starts from the beginning: both files are the original footage
+ * from second 3 (assets/video/aerospace-1280.mp4, assets/video/automotive-1280.mp4), so the beginning is second 3.
+ * A video is only fetched when its picture is close (LOAD_AHEAD screens for the first, once the doors are half open for the second).
+ * With "reduce motion" none of this runs: the two pictures are simply one under the other, with their words.
  */
 (function () {
   'use strict';
   var hangar = document.getElementById('hangar');
   var stage = hangar && hangar.querySelector('.hangar__stage');
-  var video = stage && stage.querySelector('.hangar__video');
-  if (!hangar || !stage || !video) return;
+  var videoA = stage && stage.querySelector('.hangar__scene--a .hangar__video');
+  var videoB = stage && stage.querySelector('.hangar__scene--b .hangar__video');
+  if (!hangar || !stage || !videoA || !videoB) return;
 
   var params = new URLSearchParams(window.location.search);
   var reduced = params.get('motion') === 'reduced' ||
@@ -30,24 +35,28 @@
 
   var M = window.BromaslogMotion;
   var easeMove = M && M.ease ? M.ease.move : function (p) { return p * p * (3 - 2 * p); };
-  var HOLD = 0.10;           // share of the held scroll the doors stay shut (a beat, with the line complete)
-  var OPENED = 0.70;         // share of the held scroll at which they are fully open
-  var LOAD_AHEAD = 3;        // screens before the stage at which the video starts to be fetched
+  var LAG = 0.33;            // the left half of the second picture starts this share of its distance behind the right one (as in js/overlay.js)
+  // the held scroll, in screens (the hangar is 400svh: 100svh held + 300svh of these)
+  var HOLD_VH = 0.16;        // the doors stay shut for a beat, with the line complete
+  var OPEN_VH = 1.12;        // the doors are fully open
+  var B_FROM_VH = 1.70;      // the second picture starts to rise (the first one has been there for a while)
+  var B_TO_VH = 2.50;        // ...and is in place (it stays there until the end)
+  var LOAD_AHEAD = 3;        // screens before the stage at which the first video starts to be fetched
+  var LOAD_B_VH = 0.6;       // held screens after which the second video starts to be fetched
 
   var texts = stage.querySelectorAll('.hangar__text');
-  var top = 0, span = 1, vh = 0, textTop = 0, loaded = false, last = {};
+  var top = 0, vh = 0, textTop = 0, last = {}, loaded = [false, false];
 
   function clamp(v) { return v < 0 ? 0 : v > 1 ? 1 : v; }
   function set(name, v) { if (last[name] !== v) { last[name] = v; stage.style.setProperty(name, v); } }
 
-  video.muted = true; video.defaultMuted = true;         // (the attribute is not enough for every browser to let it play by itself)
+  [videoA, videoB].forEach(function (v) { v.muted = true; v.defaultMuted = true; });   // (the attribute is not enough for every browser to let it play by itself)
   hangar.classList.add('hangar--live');
 
   function measure() {
     var r = hangar.getBoundingClientRect();
     top = r.top + window.pageYOffset;
     vh = window.innerHeight;
-    span = Math.max(1, r.height - vh);                    // the scroll during which the stage is held
     var tallest = 0;                                      // the sentence is in the middle of the stage: where its top edge is
     Array.prototype.forEach.call(texts, function (t) { tallest = Math.max(tallest, t.offsetHeight); });
     textTop = Math.max(0, (vh - tallest) / 2);
@@ -56,19 +65,30 @@
     set('--hg-mx', (Math.round(mx) + 0.5) + 'px');
   }
 
-  function load() {
-    if (loaded) return;
-    loaded = true;
-    video.src = video.getAttribute('data-src');
-    video.preload = 'auto';
-    video.load();
+  function load(i) {
+    if (loaded[i]) return;
+    loaded[i] = true;
+    var v = i ? videoB : videoA;
+    v.src = v.getAttribute('data-src');
+    v.preload = 'auto';
+    v.load();
+  }
+
+  // a video plays while its picture is in view and stops (and, if the picture went away completely, rewinds) when it is not
+  function drive(v, play, rewind) {
+    if (play) {
+      if (v.paused) { var pr = v.play(); if (pr && pr.catch) pr.catch(function () {}); }
+      return;
+    }
+    if (!v.paused) v.pause();
+    if (rewind && v.readyState > 0 && v.currentTime > 0.05) v.currentTime = 0;
   }
 
   function render() {
     var y = window.pageYOffset;
-    if (y > top - LOAD_AHEAD * vh) load();
-
-    var p = clamp((y - top) / span);                        // how much of the held scroll has gone by
+    if (y > top - LOAD_AHEAD * vh) load(0);
+    var held = (y - top) / vh;                               // screens of held scroll gone by (negative before the stage is held)
+    if (held > LOAD_B_VH) load(1);
 
     // 1. the line: the tip of the line of the stops (js/sectorline.js: it goes down to the bottom edge of the window as the stage comes in)
     var tipInWindow = vh * (window.BromaslogLine ? window.BromaslogLine.tipShare(y) : 1);
@@ -77,8 +97,8 @@
     set('--hg-a', lineLength.toFixed(1) + 'px');
     stage.classList.toggle('is-lit', lineLength >= textTop);   // the sentence is lit when the line reaches it (as the titles of the stops are)
 
-    // 2. the doors
-    var o = clamp((p - HOLD) / (OPENED - HOLD));
+    // 2. the doors, and the first picture
+    var o = clamp((held - HOLD_VH) / (OPEN_VH - HOLD_VH));
     var e = easeMove(o);
     set('--hg-open', e.toFixed(4));
     set('--hg-edge', clamp(o / 0.12).toFixed(3));
@@ -87,13 +107,16 @@
     set('--hg-light', (0.35 + 0.65 * e).toFixed(3));
     stage.classList.toggle('is-open', e > 0);              // (while the doors are shut the picture is not drawn: no edge of it shows between them)
 
-    // 3. the video: plays once the doors are apart, rewinds when they are shut again
-    if (e > 0.02) {
-      if (video.paused) { var p = video.play(); if (p && p.catch) p.catch(function () {}); }
-    } else if (o <= 0) {
-      if (!video.paused) video.pause();
-      if (video.readyState > 0 && video.currentTime > 0.05) video.currentTime = 0;
-    }
+    // 4. the second picture rises over the first one
+    var rise = easeMove(clamp((held - B_FROM_VH) / (B_TO_VH - B_FROM_VH)));
+    set('--hg-b', (1 - rise).toFixed(4));
+    set('--hg-lag', (LAG * (1 - rise) * vh).toFixed(1) + 'px');
+    set('--hg-cover', rise.toFixed(4));
+    stage.classList.toggle('is-b', rise > 0);
+
+    // 3. and 4. the videos: each plays while its picture is in view; both rewind when their picture is gone
+    drive(videoA, e > 0.02 && rise < 0.98, o <= 0);
+    drive(videoB, rise > 0.02, rise <= 0);
   }
 
   var queued = false;
