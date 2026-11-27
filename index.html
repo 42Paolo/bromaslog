@@ -21,7 +21,8 @@
   <link rel="preload" as="image" href="assets/images/bg-video-poster.jpg" fetchpriority="high">
   <link rel="stylesheet" href="css/motion.css?v=20261265">
   <link rel="stylesheet" href="css/preloader.css?v=20261150">
-  <link rel="stylesheet" href="css/site.css?v=20261305">
+  <link rel="stylesheet" href="css/site.css?v=20261306">
+  <link rel="stylesheet" href="css/hangar.css?v=20261301">
   <link rel="stylesheet" href="css/contact.css?v=20261260">
 </head>
 <body id="top">
@@ -262,8 +263,20 @@
           </div>
         </div>
 
-        <!-- After the last stop: a screen and a half of plain black to scroll through. The line goes on through it to the end of the page (js/sectorline.js). -->
-        <div class="vs-end" aria-hidden="true"></div>
+      </div>
+
+      <!-- The end of the page: a hangar. The line goes on down the seam of two black doors; scrolling on, the doors slide apart along it and
+           the video behind them starts (it starts from the beginning of assets/video/hangar-1280.mp4, which is the original footage from
+           second 3). Decorative: the picture has no text. css/hangar.css, js/hangar.js. Without the script it is just the open hangar:
+           the first picture. -->
+      <div class="hangar" id="hangar" aria-hidden="true">
+        <div class="hangar__stage">
+          <video class="hangar__video" muted playsinline loop preload="none" poster="assets/images/hangar-poster.jpg" data-src="assets/video/hangar-1280.mp4"></video>
+          <div class="hangar__shade"></div>
+          <div class="hangar__door hangar__door--l"></div>
+          <div class="hangar__door hangar__door--r"><span class="hangar__line"></span></div>
+          <span class="hangar__margin"></span>
+        </div>
       </div>
 
       <!-- The painted words (Direzione. Tensione. Spazio. -> the closing line) are switched off for now. To bring them back, remove the
@@ -321,7 +334,8 @@
   <script src="js/header.js?v=20261260"></script>
   <script src="js/textreveal.js?v=20261260"></script>
   <script src="js/overlay.js?v=20261300"></script>
-  <script src="js/sectorline.js?v=20261305"></script>
+  <script src="js/sectorline.js?v=20261306"></script>
+  <script src="js/hangar.js?v=20261301"></script>
   <script src="js/aboutmorph.js?v=20261269"></script>
   <script src="js/site.js?v=20261260"></script>
   <script src="js/i18n.js?v=20261301"></script>

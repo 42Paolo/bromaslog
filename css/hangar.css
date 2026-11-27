@@ -1,0 +1,59 @@
+/* ---------- the end of the last page: the hangar ----------
+   After the three stops the line goes on, down the seam where two black doors meet. Scrolling on, the doors slide apart along the line
+   (the line splits in two, one half on each door) and the video behind them starts. The stage is held on screen while this happens
+   (position: sticky), so the scroll length is the length of the hangar (260svh = one held screen + 160svh to scroll through).
+   js/hangar.js sets the variables on .hangar__stage from the scroll position, so it also runs backwards:
+     --hg-open   0 closed ... 1 open        --hg-edge   the doors' edge lines (0 closed ... 1 as soon as they part)
+     --hg-zoom   the picture settles from 1.16 to 1     --hg-light   it comes up from dark to its own light
+     --hg-a, --hg-b   where the line is drawn up to (full above a, gone below b), --hg-mx   the line on a phone
+   Without the script (or with "reduce motion") nothing is held and there are no doors: just the first picture of the video. */
+.hangar { position: relative; z-index: 0; height: 100vh; height: 100svh; background: #000; }
+.hangar__stage { position: relative; height: 100%; overflow: hidden; background: #000; }
+.hangar__video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; background: #000; }
+.hangar__shade {            /* a vignette: the picture sits in the black of the page */
+  position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(ellipse at 50% 50%, rgba(0, 0, 0, 0) 52%, rgba(0, 0, 0, .6) 100%);
+}
+.hangar__door, .hangar__margin { display: none; }
+
+/* the line, drawn up to --hg-a (full) and fading out down to --hg-b, as on the stops (same curve: js/sectorline.js) */
+.hangar__line, .hangar__margin {
+  --hg-d: calc(var(--hg-b, 0px) - var(--hg-a, 0px));
+  background: rgba(242, 240, 235, .62);
+  -webkit-mask-image: linear-gradient(to bottom, #000 var(--hg-a, 0px), rgba(0, 0, 0, .65) calc(var(--hg-a, 0px) + var(--hg-d) * .25), rgba(0, 0, 0, .35) calc(var(--hg-a, 0px) + var(--hg-d) * .5), rgba(0, 0, 0, .13) calc(var(--hg-a, 0px) + var(--hg-d) * .75), transparent var(--hg-b, 0px));
+  mask-image: linear-gradient(to bottom, #000 var(--hg-a, 0px), rgba(0, 0, 0, .65) calc(var(--hg-a, 0px) + var(--hg-d) * .25), rgba(0, 0, 0, .35) calc(var(--hg-a, 0px) + var(--hg-d) * .5), rgba(0, 0, 0, .13) calc(var(--hg-a, 0px) + var(--hg-d) * .75), transparent var(--hg-b, 0px));
+}
+
+.hangar--live { height: 260vh; height: 260svh; }
+.hangar--live .hangar__stage { position: sticky; top: 0; height: 100vh; height: 100svh; }
+.hangar--live .hangar__video {
+  transform: scale(var(--hg-zoom, 1.16));
+  filter: brightness(var(--hg-light, .35));
+  will-change: transform, filter;
+}
+.hangar--live .hangar__video { visibility: hidden; }           /* shut doors: nothing of the picture is drawn (no hairline of it at the edges) */
+.hangar--live .hangar__stage.is-open .hangar__video { visibility: visible; }
+.hangar--live .hangar__shade { z-index: 1; }
+.hangar--live .hangar__door { display: block; position: absolute; z-index: 2; top: 0; bottom: 0; width: 50%; background: #000; will-change: transform; }
+.hangar--live .hangar__door--l { left: 0; transform: translate3d(calc(var(--hg-open, 0) * -100%), 0, 0); }
+.hangar--live .hangar__door--r { right: 0; transform: translate3d(calc(var(--hg-open, 0) * 100%), 0, 0); }
+
+/* the doors' edges: a thin light line (the right door carries the line that came down the page, the left one gets its half as they part)
+   and a shadow cast on the picture, so they have depth */
+.hangar--live .hangar__door--l::before {
+  content: ""; position: absolute; top: 0; bottom: 0; right: 0; width: 1px;
+  background: rgba(242, 240, 235, .62); opacity: var(--hg-edge, 0);
+}
+.hangar--live .hangar__door--l::after,
+.hangar--live .hangar__door--r::after {
+  content: ""; position: absolute; top: 0; bottom: 0; width: min(20vw, 320px); pointer-events: none; opacity: var(--hg-edge, 0);
+}
+.hangar--live .hangar__door--l::after { left: 100%; background: linear-gradient(to right, rgba(0, 0, 0, .75), rgba(0, 0, 0, 0)); }
+.hangar--live .hangar__door--r::after { right: 100%; background: linear-gradient(to left, rgba(0, 0, 0, .75), rgba(0, 0, 0, 0)); }
+.hangar--live .hangar__line { position: absolute; z-index: 1; top: 0; left: 0; width: 1px; height: 100%; }
+
+/* on a phone the line of the stops runs down the left margin: it goes on there, and gives way to the doors' edges as they part */
+@media (max-width: 767px) {
+  .hangar--live .hangar__margin { display: block; position: absolute; z-index: 3; top: 0; left: var(--hg-mx, 8px); width: 1px; height: 100%; opacity: calc(1 - var(--hg-edge, 0)); }
+  .hangar--live .hangar__line { opacity: var(--hg-edge, 0); }
+}

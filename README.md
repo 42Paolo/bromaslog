@@ -6,7 +6,7 @@ Static site (HTML, CSS, JavaScript), published with GitHub Pages: https://42paol
 
 ```
 index.html            the page
-css/                  styles (site.css, motion.css = animation tokens, preloader.css, contact.css)
+css/                  styles (site.css, motion.css = animation tokens, preloader.css, contact.css, hangar.css)
 js/                   scripts; js/vendor/ holds GSAP and Lenis
 assets/
   fonts/              IBM Plex Mono

@@ -1,7 +1,8 @@
 /*
  * The line of the last page. Three screens follow one another (the "stops": a title in the right half, a description in the left half)
  * and one thin line goes through all of them, straight down, drawn by the scroll: forwards when you scroll down, backwards when you
- * scroll up. It never turns: it only runs vertically, and it goes all the way to the end of the page.
+ * scroll up. It never turns: it only runs vertically. At the end of the last stop it goes on in the hangar (js/hangar.js), down the seam
+ * of the doors, to the end of the page.
  *
  *   Desktop: the line runs down the seam between the two halves (the seam the page rose along).
  *   Phone:   the line runs down the left margin (the halves are stacked there).
@@ -10,9 +11,9 @@
  * a stop is drawn while the stop climbs from WIN of the window height (its top edge) to its place at rest: the tip starts at the top
  * edge of the stop and runs down through it, faster than the page climbs, so it is seen going down the screen; when the stop is at rest
  * the line is drawn to its bottom edge. Then, while the next stop climbs towards the window, the end of the line goes up with the page
- * (nothing is drawn), and when that stop reaches WIN the tip runs down through it in turn. After the last stop the same happens through the
- * plain black screen and a half that ends the page (.vs-end): the line reaches the very end of the page when you reach it. It is a
- * function of the scroll position, so scrolling back up draws it backwards, retracting from the tip.
+ * (nothing is drawn), and when that stop reaches WIN the tip runs down through it in turn. After the last stop the hangar draws the line in
+ * the same way, and the end of this one stops being soft as the hangar's starts. It is a function of the scroll position, so scrolling
+ * back up draws it backwards, retracting from the tip.
  * The tip is soft: a little above it the line starts to fade and a little below it it is gone, as if it were entering the dark (a gradient on
  * the stroke that moves with the tip). When the line is complete it is complete: the gradient has gone past the end.
  * The title of a stop is lit when the tip reaches its label, the description when the tip reaches its first line: the title always comes
@@ -36,6 +37,7 @@
   var WIN = 0.6;          // a stop's stretch of the line is drawn while the stop climbs from this share of the window height to the top
   var HEAD = 0.08;        // the line starts to fade this far above the tip...
   var TAIL = 0.3;         // ...and is gone this far below it (shares of the window height)
+  window.BromaslogLine = { WIN: WIN, HEAD: HEAD, TAIL: TAIL };   // js/hangar.js draws the end of the line with the same numbers
   var sectors = Array.prototype.slice.call(wrap.querySelectorAll('.vs'));
   var segs = [], stops = [], total = 0, ready = false;
 
@@ -93,9 +95,12 @@
       };
     });
     var last = items[items.length - 1];
-    var rs0 = wrapTop + last.bottom - WIN * vh;                                     // the end of the last stop is where the stops would go on
-    var maxScroll = Math.max(0, document.documentElement.scrollHeight - vh);        // the end of the page
-    segs.push({ s0: rs0, s1: Math.max(maxScroll, rs0 + 1), l0: last.bottom, l1: total + TAIL * vh });
+    // The line goes on below the last stop, in the hangar (js/hangar.js draws it there, from the top edge of the hangar's stage). Here the
+    // end of the line stops being soft as that one starts to come out: the same stretch of scroll in which the hangar's line reaches full.
+    var hangar = document.getElementById('hangar');
+    var hangarTop = hangar ? hangar.getBoundingClientRect().top + window.pageYOffset : wrapTop + last.bottom;
+    var rs0 = hangarTop - (WIN + TAIL) * vh;
+    segs.push({ s0: rs0, s1: rs0 + (HEAD + TAIL) / (1 + 2 * TAIL) * (WIN + TAIL) * vh, l0: last.bottom, l1: total + TAIL * vh });
     ready = true;
   }
 

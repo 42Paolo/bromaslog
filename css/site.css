@@ -474,7 +474,6 @@ html.is-about-hold { scrollbar-gutter: stable; }
 .vs__text { margin: 0; max-width: 675px; font: 400 clamp(15px, 1.05vw, 17px) / 1.55 var(--font-sans); color: rgba(242, 240, 235, .78); }
 .vs__text + .vs__text { margin-top: 22.4px; color: rgba(242, 240, 235, .56); }
 .vs-wrap { position: relative; }
-.vs-end { height: 150vh; height: 150svh; }   /* after the last stop: a screen and a half of plain black (the line goes on through it to the end of the page) */
 .vs__line { position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
 .vs__path { fill: none; stroke: rgba(242, 240, 235, .62); stroke-width: 1; }
 /* with the script the texts wait for the line (they are lit when it reaches them); without it they are simply there */
