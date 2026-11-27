@@ -562,9 +562,19 @@
       if (flat()) return;
       if (running()) { dirty = true; return; }
       rebuild();
+      builtOrRetry();
     }); });
   });
   window.addEventListener('scroll', onScroll, { passive: true });
+
+  // If the page could not be built (the headline was not there yet), try again a little later: without it there is no sequence at all and
+  // the visitor would go straight through the white page.
+  var retries = 0;
+  function builtOrRetry() {
+    if (tl || flat() || retries >= 8) return;
+    retries++;
+    window.setTimeout(function () { if (!tl && !flat() && !running()) { rebuild(); builtOrRetry(); } }, 400);
+  }
 
   var ready = document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve();
   ready.then(function () {
@@ -572,6 +582,7 @@
       if (flat()) { toFlat(); return; }
       if (window.pageYOffset > gateY() + 5) state = 'THIRD';              // opened (or reloaded) already below the white page
       rebuild();
+      builtOrRetry();
       lastY = window.pageYOffset;
       onScroll();
     }, 300);

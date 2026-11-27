@@ -27,6 +27,12 @@
 
   // Our own simple markup: text and <br>.
   function split(el) {
+    // Already split? (js/aboutmorph.js splits the headline too, and if it ran first, or the language event comes again with the text
+    // unchanged, the element holds .tw-word spans and no loose text: splitting it again would read no text at all and wipe the headline.)
+    // Keep those words as they are: other scripts hold on to them.
+    var done = el.querySelectorAll('.tw-word');
+    var loose = Array.prototype.some.call(el.childNodes, function (n) { return n.nodeType === 3 && /\S/.test(n.textContent); });
+    if (done.length && !loose) { el._words = Array.prototype.slice.call(done); return; }
     var parts = [];                        // words, and null for a <br>
     Array.prototype.forEach.call(el.childNodes, function (n) {
       if (n.nodeType === 3) n.textContent.split(/\s+/).forEach(function (w) { if (w) parts.push(w); });
