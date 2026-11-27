@@ -1,20 +1,24 @@
 /*
  * The line of the last page. Three screens follow one another (the "stops": a title in the right half, a description in the left half)
  * and one thin line goes through all of them, straight down, drawn by the scroll: forwards when you scroll down, backwards when you
- * scroll up. It never turns: it only runs vertically.
+ * scroll up. It never turns: it only runs vertically, and it goes all the way to the end of the page.
  *
  *   Desktop: the line runs down the seam between the two halves (the seam the page rose along).
  *   Phone:   the line runs down the left margin (the halves are stacked there).
  *
- * The tip of the line stays at a fixed height of the window (TIP of its height), so the line is as long as the page has scrolled
- * past that height: scroll down and it grows, scroll up and it retracts. The line has no hard end: below the tip it goes on and slowly
- * fades until it is gone, as if it were entering the dark (a gradient on the stroke that moves with the tip). After the last stop the
- * page goes on for another screen and a half of plain black (.vs-end): the line goes on into it and, fixed to the page this time (a
- * mask on the stroke), is all but gone half a screen below the end of the last stop, so the rest of that scroll is only black.
- * The title of a stop is lit when the tip reaches its label, the
- * description when the tip reaches its first line: the title always comes first, and a screen at rest has both. The positions are
- * measured from the page (so they follow the real texts at any size and in both languages) and measured again when the window, the
- * fonts or the language change. With "reduce motion" the whole line is simply drawn and everything is shown.
+ * How it is drawn. The line is as long as the black page, and each stretch of it is drawn while the page scrolls past it. The stretch of
+ * a stop is drawn while the stop climbs from WIN of the window height (its top edge) to its place at rest: the tip starts at the top
+ * edge of the stop and runs down through it, faster than the page climbs, so it is seen going down the screen; when the stop is at rest
+ * the line is drawn to its bottom edge. Then, while the next stop climbs towards the window, the end of the line goes up with the page
+ * (nothing is drawn), and when that stop reaches WIN the tip runs down through it in turn. After the last stop the same happens through the
+ * plain black screen and a half that ends the page (.vs-end): the line reaches the very end of the page when you reach it. It is a
+ * function of the scroll position, so scrolling back up draws it backwards, retracting from the tip.
+ * The tip is soft: a little above it the line starts to fade and a little below it it is gone, as if it were entering the dark (a gradient on
+ * the stroke that moves with the tip). When the line is complete it is complete: the gradient has gone past the end.
+ * The title of a stop is lit when the tip reaches its label, the description when the tip reaches its first line: the title always comes
+ * first, and a stop at rest has both. The positions are measured from the page (so they follow the real texts at any size and in both
+ * languages) and measured again when the window, the fonts or the language change. With "reduce motion" the whole line is simply drawn
+ * and everything is shown.
  */
 (function () {
   'use strict';
@@ -29,15 +33,13 @@
     (params.get('motion') !== 'full' && !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches));
 
   var NS = 'http://www.w3.org/2000/svg';
-  var TIP = 0.8;          // the tip of the line is at this share of the window height, measured from the top of the window
+  var WIN = 0.6;          // a stop's stretch of the line is drawn while the stop climbs from this share of the window height to the top
   var HEAD = 0.08;        // the line starts to fade this far above the tip...
   var TAIL = 0.3;         // ...and is gone this far below it (shares of the window height)
-  var END_FROM = -0.1;    // the end fade (fixed to the page) starts this far from the bottom of the last stop...
-  var END_TO = 0.5;       // ...and the line is gone half a screen below it
   var sectors = Array.prototype.slice.call(wrap.querySelectorAll('.vs'));
-  var stops = [], total = 0, wrapTop = 0, ready = false;
+  var segs = [], stops = [], total = 0, ready = false;
 
-  // the fade: a vertical gradient on the stroke, from the line's colour (full) to nothing, moved along with the tip
+  // the soft tip: a vertical gradient on the stroke, from the line's colour (full) to nothing, moved along with the tip
   var grad = document.createElementNS(NS, 'linearGradient');
   grad.setAttribute('id', 'vs-fade');
   grad.setAttribute('gradientUnits', 'userSpaceOnUse');
@@ -48,31 +50,10 @@
     stop.setAttribute('stop-opacity', s[1]);
     grad.appendChild(stop);
   });
-  // the end fade: a mask on the line (white = seen), fixed to the page, from full to nothing below the last stop
-  var endGrad = document.createElementNS(NS, 'linearGradient');
-  endGrad.setAttribute('id', 'vs-end-grad');
-  endGrad.setAttribute('gradientUnits', 'userSpaceOnUse');
-  endGrad.setAttribute('x1', 0); endGrad.setAttribute('x2', 0);
-  [[0, 1], [0.25, 0.6], [0.5, 0.28], [0.75, 0.08], [1, 0]].forEach(function (s) {
-    var stop = document.createElementNS(NS, 'stop');
-    stop.setAttribute('offset', s[0]);
-    stop.setAttribute('stop-color', '#fff');
-    stop.setAttribute('stop-opacity', s[1]);
-    endGrad.appendChild(stop);
-  });
-  var endMask = document.createElementNS(NS, 'mask');
-  endMask.setAttribute('id', 'vs-end');
-  endMask.setAttribute('maskUnits', 'userSpaceOnUse');
-  var endRect = document.createElementNS(NS, 'rect');
-  endRect.setAttribute('fill', 'url(#vs-end-grad)');
-  endMask.appendChild(endRect);
   var defs = document.createElementNS(NS, 'defs');
   defs.appendChild(grad);
-  defs.appendChild(endGrad);
-  defs.appendChild(endMask);
   svg.insertBefore(defs, svg.firstChild);
   path.style.stroke = 'url(#vs-fade)';
-  path.setAttribute('mask', 'url(#vs-end)');
 
   function px(v) { return Math.round(v) + 0.5; }       // a 1px line sits on a pixel row
 
@@ -80,14 +61,13 @@
     var prev = section.style.getPropertyValue('--rise');
     section.style.setProperty('--rise', '0px');         // the blocks glide while the page rises: measure them in their place
     var wr = wrap.getBoundingClientRect();
-    wrapTop = wr.top + window.pageYOffset;
+    var wrapTop = wr.top + window.pageYOffset;
     var phone = window.innerWidth < 768;
     var vh = window.innerHeight;
     var items = sectors.map(function (vs) {
       var r = vs.getBoundingClientRect(), e = vs.querySelector('.vs__eyebrow').getBoundingClientRect(), d = vs.querySelector('.vs__desc').getBoundingClientRect();
-      var top = r.top - wr.top;
       return {
-        top: top, xE: e.left - wr.left, yE: (e.top + e.bottom) / 2 - wr.top, yD: d.top - wr.top,
+        top: r.top - wr.top, bottom: r.bottom - wr.top, xE: e.left - wr.left, yE: (e.top + e.bottom) / 2 - wr.top, yD: d.top - wr.top,
         title: vs.querySelector('.vs__title-block'), desc: vs.querySelector('.vs__desc')
       };
     });
@@ -98,31 +78,43 @@
     path.setAttribute('d', 'M' + x + ' 0 L' + x + ' ' + total);   // the whole line is always there: the gradient decides how much of it is seen
     grad.setAttribute('x1', x); grad.setAttribute('x2', x);
 
-    var last = sectors[sectors.length - 1].getBoundingClientRect();   // the end fade starts at the bottom of the last stop
-    var endAt = last.bottom - wr.top;
-    endGrad.setAttribute('y1', (endAt + END_FROM * vh).toFixed(1));
-    endGrad.setAttribute('y2', (endAt + END_TO * vh).toFixed(1));
-    endMask.setAttribute('x', -10); endMask.setAttribute('y', -10);
-    endMask.setAttribute('width', Math.round(wr.width) + 20); endMask.setAttribute('height', total + 20);
-    endRect.setAttribute('x', -10); endRect.setAttribute('y', -10);
-    endRect.setAttribute('width', Math.round(wr.width) + 20); endRect.setAttribute('height', total + 20);
-
-    // where the tip must be to light each text; never further down than a screen at rest can reach, so a screen at rest is complete
+    // where the tip has to be to light each text
     stops = items.map(function (it) {
-      var reach = it.top + TIP * vh - 24;
-      return { titleAt: Math.min(it.yE, reach), descAt: Math.min(it.yD + 22, reach), title: it.title, desc: it.desc };
+      return { titleAt: it.yE, descAt: it.yD + 22, title: it.title, desc: it.desc };
     });
+
+    // The stretches: while the scroll goes from s0 to s1 the tip goes from l0 to l1 (positions on the line). The first one starts above the
+    // line (l0 < 0) so the line comes out of nothing; the last one ends below the end of the line, so when you reach the end of the page
+    // the line is complete and no longer fading.
+    segs = items.map(function (it, i) {
+      return {
+        s0: wrapTop + it.top - (i === 0 ? WIN + TAIL : WIN) * vh, s1: wrapTop + it.top,
+        l0: i === 0 ? -TAIL * vh : items[i - 1].bottom, l1: it.bottom
+      };
+    });
+    var last = items[items.length - 1];
+    var rs0 = wrapTop + last.bottom - WIN * vh;                                     // the end of the last stop is where the stops would go on
+    var maxScroll = Math.max(0, document.documentElement.scrollHeight - vh);        // the end of the page
+    segs.push({ s0: rs0, s1: Math.max(maxScroll, rs0 + 1), l0: last.bottom, l1: total + TAIL * vh });
     ready = true;
+  }
+
+  // where the tip of the line is at this scroll position (backwards when scrolling back)
+  function tipAt(y) {
+    for (var i = 0; i < segs.length; i++) {
+      var g = segs[i];
+      if (y <= g.s0) return g.l0;
+      if (y < g.s1) return g.l0 + (y - g.s0) / (g.s1 - g.s0) * (g.l1 - g.l0);
+    }
+    return segs[segs.length - 1].l1;
   }
 
   function render() {
     if (!ready) return;
     var vh = window.innerHeight;
-    // where the tip is on the line (before the page has arrived it is above the line: nothing is seen, then it fades in from the top)
-    var L = Math.min(window.pageYOffset + TIP * vh - wrapTop, total);
-    var y2 = Math.min(L + TAIL * vh, total);                       // the fade is over by here (at the end of the line at the latest)
-    var y1 = Math.min(L - HEAD * vh, y2 - 1);
-    if (reduced) { y1 = total + 20; y2 = total + 21; }             // reduced motion: no tip, the whole line is there (only the end fade stays)
+    var L = tipAt(window.pageYOffset);
+    var y1 = L - HEAD * vh, y2 = L + TAIL * vh;
+    if (reduced) { y1 = total + 20; y2 = total + 21; }             // reduced motion: no tip, the whole line is there
     grad.setAttribute('y1', y1.toFixed(1)); grad.setAttribute('y2', y2.toFixed(1));
     if (reduced) return;
     stops.forEach(function (s) {
