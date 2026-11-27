@@ -7,7 +7,7 @@
  *      The sentence across the doors is lit when the line reaches its top edge (class is-lit), like the titles of the stops, and unfolds
  *      from the seam outwards (css/hangar.css).
  *   2. After a beat (HOLD) the doors slide apart along the line, over OPENED of the held scroll: the line splits in two, one half on
- *      each door and the halves of the sentence go with the doors, and the video behind comes up from dark and settles (a scale from
+ *      each door; the halves of the sentence go with the doors and grow more transparent as they open; the video behind comes up from dark and settles (a scale from
  *      1.16 to 1, light from .35 to 1).
  *   3. The video plays while the doors are open, and stays there until the page ends.
  * Everything is a function of the scroll position, so it runs backwards too: scroll up and the doors close, the line comes back
@@ -82,6 +82,7 @@
     var e = easeMove(o);
     set('--hg-open', e.toFixed(4));
     set('--hg-edge', clamp(o / 0.12).toFixed(3));
+    set('--hg-text', (1 - o).toFixed(3));                 // the sentence grows more transparent, evenly with the scroll, as the doors open (gone when open)
     set('--hg-zoom', (1 + 0.16 * (1 - e)).toFixed(4));
     set('--hg-light', (0.35 + 0.65 * e).toFixed(3));
     stage.classList.toggle('is-open', e > 0);              // (while the doors are shut the picture is not drawn: no edge of it shows between them)
