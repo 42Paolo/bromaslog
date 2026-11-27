@@ -21,17 +21,24 @@
 }
 .hangar__door, .hangar__margin { display: none; }
 
-/* The word behind the doors, over the picture: "AEROSPACE", big, in the middle. The doors uncover it from the middle outwards. It is the page's
-   own type (Helvetica Neue, the off-white of the texts, the same tight tracking as the titles) in bold, stretched sideways to the proportions
-   of an extended bold (Helvetica Neue Extended is not a font the browsers have, so the bold is widened by 1.3). It comes up with the picture:
-   its light and its settling are the picture's (--hg-light, --hg-zoom), and it is a little translucent, so it sits in the picture and does not
-   cut it. Without the script it is simply there, on the first picture. */
+/* The word behind the doors, over the picture: "AEROSPACE", big, in the middle. The doors uncover it from the middle outwards. It is set in an
+   extended bold (Archivo, width 125, weight 700: a free font, SIL Open Font License, in assets/fonts; Helvetica Neue Extended itself is not
+   something a browser has), in the off-white of the page's texts. It comes up with the picture: its light and its settling are the picture's
+   (--hg-light, --hg-zoom), and it is a little translucent, so it sits in the picture and does not cut it. Without the script it is simply
+   there, on the first picture. (If the font did not load, the page's own Helvetica Neue Bold shows instead.) */
+@font-face {
+  font-family: "Archivo Expanded";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("../assets/fonts/archivo-expanded-bold-latin.woff2") format("woff2");
+}
 .hangar__word { position: absolute; z-index: 1; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: none; }
 .hangar__word-text {
   margin: 0; white-space: nowrap; text-transform: uppercase;
-  font: 700 clamp(34px, 9vw, 200px) / 1 var(--font-sans); letter-spacing: -.02em; color: rgba(242, 240, 235, .9);
+  font: 700 clamp(28px, 8.8vw, 200px) / 1 "Archivo Expanded", var(--font-sans); letter-spacing: -.01em; color: rgba(242, 240, 235, .9);
   text-shadow: 0 0 .35em rgba(0, 0, 0, .5), 0 0 1.1em rgba(0, 0, 0, .35);          /* a soft shade under the letters keeps them readable on the bright parts of the picture */
-  transform: scaleX(1.3) scale(var(--hg-zoom, 1));
+  transform: scale(var(--hg-zoom, 1));
   opacity: var(--hg-light, 1);
 }
 

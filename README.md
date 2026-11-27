@@ -9,7 +9,7 @@ index.html            the page
 css/                  styles (site.css, motion.css = animation tokens, preloader.css, contact.css, hangar.css)
 js/                   scripts; js/vendor/ holds GSAP and Lenis
 assets/
-  fonts/              IBM Plex Mono
+  fonts/              IBM Plex Mono, Archivo Expanded Bold (both free fonts: their licences are here)
   images/             logo, posters; images/machines/ = the three machines
   video/              videos used by the page
 source/               originals and working files (not published, see .gitignore)
