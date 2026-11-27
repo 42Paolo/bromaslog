@@ -13,13 +13,12 @@
  * One GSAP timeline holds everything, so reversing it is simply timeline.reverse():
  *   - headline: FLIP, every word travels from its place in the three lines to its place in the one-line layout and grows to the final size;
  *   - photo: rises from below the page (clipped by the page itself);
- *   - text swap: the old paragraphs dissolve into small squares and the new text re-assembles from squares. Both are drawn on one small
- *     canvas laid over the text (a few thousand squares, no extra DOM); the real text stays in the HTML and is only shown when it is "on".
+ *   - text swap: the old paragraphs go (quickly, a little to the left, one after the other) and the machine text comes in from the right, line
+ *     after line (every block over TEXT_IN, one after the other). The real text stays in the HTML; it is only shown when it is "on".
  *
  * A second step: one more scroll attempt slides machine 1 out to the left while machine 2 (EQU 8 creel) comes in from the right, like a
- * carousel; a third one does the same with machine 3; scrolling back up reverses them. In every step the text of the machine that leaves
- * dissolves into squares and the text of the next one re-assembles from squares: the same effect, the same durations and the same curve
- * as the first scene (the dissolve takes SCENE x 0.29, the assembly SCENE x 0.3).
+ * carousel; a third one does the same with machine 3; scrolling back up reverses them. The text of every machine comes in the same way
+ * (the same movement, the same time): in the first scene, in the second step and in the third.
  *
  * Phones (< 768px) and "reduce motion": no sequence and no scroll lock, the machine blocks simply follow the text (photo above its description).
  */
@@ -58,8 +57,6 @@
   var RETURN_PATIENCE = 500;    // ms: coming back onto the page, a scroll that keeps going is only held this long
   var NEW_SWIPE_RISE = 30;      // how far (wheel delta) a new swipe has to climb above the slowest point of the one that is fading
   var REVERSE_SPEED = 1 / M.exitRatio;    // the way back is quicker, like every exit (x 0.8 of the time)
-  var CELL = 3;                 // size of the dissolve squares, in CSS px
-  var DRIFT = 7;                // how far a square wanders, in CSS px
 
   // INITIAL (company text) -> FWD -> FINAL (machine 1) -> FWD2 -> SECOND (machine 2) -> FWD3 -> THIRD (machine 3), and the same way back (REV3, REV2, REV).
   var state = 'INITIAL';        // INITIAL | FWD | FINAL | REV | FWD2 | SECOND | REV2 | FWD3 | THIRD | REV3
@@ -78,11 +75,13 @@
   var touchY = null;
   var tl = null, tlS = null, slideTw = null;     // tl: the first sequence; tlS: the carousel (one timeline, SLIDE seconds per step)
   var SCENE = M.dur.scene;       // the first sequence (headline, photo, text change) is one scene
-  var SLIDE = M.dur.primary;     // the change from one machine to the next is the main movement of the page: one step of the carousel
+  var SLIDE = M.dur.primary;     // the change from one machine to the next is the main movement of the page: the photos' step of the carousel
+  var TEXT_IN = M.dur.fast * 2;  // the text of a machine comes in block after block, each over this time (twice the fast tier: 0.7 s)
+  var STEP = SLIDE;              // the length of one carousel step: SLIDE, or longer if the text needs more time to come in (set in build)
   var dirty = false;            // a resize / language change came while the sequence was running
-  // progress of the square transitions: the company text dissolves (old) and machine 1's text assembles (neu); then, in the two carousel
-  // steps, machine 1's text dissolves (o2) and machine 2's assembles (n2), machine 2's dissolves (o3) and machine 3's assembles (n3)
-  var fx = { old: 0, neu: 0, o2: 0, n2: 0, o3: 0, n3: 0 };
+  // Markers that the timelines carry, only to decide which text is shown (see render): old = the company text is gone, neu = machine 1's text is
+  // coming in, s2 / s3 = the progress of the two carousel steps' photos
+  var fx = { old: 0, neu: 0, s2: 0, s3: 0 };
 
   function running() { return /^(FWD|REV)[23]?$/.test(state); }
   var STATES = ['INITIAL', 'FINAL', 'SECOND', 'THIRD'];
@@ -199,153 +198,16 @@
   }
 
   /* ======================================================================
-     Square transitions (canvas)
+     Which text is shown
      ====================================================================== */
 
-  var canvas = null, ctx = null;
-  var fxS = null, fxBox = null;     // fxS: the squares of the four texts (the company text, machine 1, machine 2, machine 3); fxBox: the canvas, big enough for all of them
-
-  // Every word of these elements as the page shows it now: text, position, font, colour.
-  function collectWords(roots) {
-    var out = [];
-    roots.forEach(function (el) {
-      var walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
-      var node;
-      while ((node = walker.nextNode())) {
-        var cs = getComputedStyle(node.parentElement);
-        var text = node.nodeValue, re = /\S+/g, m;
-        while ((m = re.exec(text))) {
-          var r = document.createRange();
-          r.setStart(node, m.index);
-          r.setEnd(node, m.index + m[0].length);
-          var b = r.getClientRects()[0];
-          if (!b || !b.width) continue;
-          out.push({
-            t: cs.textTransform === 'uppercase' ? m[0].toUpperCase() : m[0],
-            x: b.left, y: b.top, w: b.width, h: b.height,
-            font: cs.fontStyle + ' ' + cs.fontWeight + ' ' + cs.fontSize + ' ' + cs.fontFamily,
-            size: parseFloat(cs.fontSize) || 16,
-            color: cs.color, ls: cs.letterSpacing === 'normal' ? '0px' : cs.letterSpacing
-          });
-        }
-      }
-    });
-    return out;
-  }
-
-  function bounds(words) {
-    var l = Infinity, t = Infinity, r = -Infinity, b = -Infinity;
-    words.forEach(function (w) {
-      l = Math.min(l, w.x); t = Math.min(t, w.y);
-      r = Math.max(r, w.x + w.w); b = Math.max(b, w.y + w.h);
-    });
-    return { l: Math.floor(l) - 2, t: Math.floor(t) - 2, r: Math.ceil(r) + 2, b: Math.ceil(b) + 2 };
-  }
-
-  // Draws the words on an offscreen canvas and cuts them into small squares (only the ones that hold ink).
-  function makeSquares(words, box, dpr) {
-    var wd = Math.ceil((box.r - box.l) * dpr), hd = Math.ceil((box.b - box.t) * dpr);
-    var src = document.createElement('canvas');
-    src.width = wd; src.height = hd;
-    var c = src.getContext('2d', { willReadFrequently: true });
-    c.setTransform(dpr, 0, 0, dpr, 0, 0);
-    c.textBaseline = 'alphabetic';
-    words.forEach(function (w) {
-      c.font = w.font;
-      c.fillStyle = w.color;
-      if ('letterSpacing' in c) c.letterSpacing = w.ls;
-      var asc = c.measureText(w.t).fontBoundingBoxAscent;
-      if (!asc) asc = w.size * 0.8;
-      c.fillText(w.t, w.x - box.l, w.y - box.t + asc);
-    });
-    var cs = Math.max(1, Math.round(CELL * dpr));
-    var nx = Math.ceil(wd / cs), ny = Math.ceil(hd / cs);
-    var data = c.getImageData(0, 0, wd, hd).data;
-    var sx = [], sy = [], t = [], vx = [], vy = [];
-    for (var j = 0; j < ny; j++) {
-      for (var i = 0; i < nx; i++) {
-        var ink = false;
-        for (var y = j * cs; y < Math.min(hd, (j + 1) * cs) && !ink; y++) {
-          for (var x = i * cs; x < Math.min(wd, (i + 1) * cs); x++) {
-            if (data[(y * wd + x) * 4 + 3] > 24) { ink = true; break; }
-          }
-        }
-        if (!ink) continue;
-        sx.push(i * cs); sy.push(j * cs);
-        t.push(0.6 * Math.random() + 0.4 * ((i / nx + j / ny) / 2));     // order of the dissolve: random, with a slow sweep from the top left
-        vx.push(Math.random() * 2 - 1); vy.push(Math.random() * 2 - 1);
-      }
-    }
-    return { src: src, cs: cs, n: sx.length, sx: sx, sy: sy, t: t, vx: vx, vy: vy, left: box.l, top: box.t, dpr: dpr };
-  }
-
-  var fxReady = false;
-  function ensureFx() { if (!fxReady) { prepareFx(); fxReady = true; } }   // cutting the text into squares takes a few tens of ms: done while the page rests, not when the sequence starts
-  function prepareFx() {
-    var dpr = Math.min(window.devicePixelRatio || 1, 2);
-    function wordsOf(c) { return collectWords([c.querySelector('.am-title'), c.querySelector('.am-text'), c.querySelector('.sec-textlink')]); }
-    var texts = [collectWords(Array.prototype.slice.call(cols.querySelectorAll('.sec-text, .sec-textlink'))), wordsOf(copy), wordsOf(copy2), wordsOf(copy3)];
-    if (texts.some(function (w) { return !w.length; })) { fxS = null; return; }
-    var boxes = texts.map(bounds);
-    fxS = texts.map(function (w, i) { return makeSquares(w, boxes[i], dpr); });
-    var m = DRIFT + 4;
-    fxBox = {
-      l: Math.min.apply(null, boxes.map(function (b) { return b.l; })) - m, t: Math.min.apply(null, boxes.map(function (b) { return b.t; })) - m,
-      r: Math.max.apply(null, boxes.map(function (b) { return b.r; })) + m, b: Math.max.apply(null, boxes.map(function (b) { return b.b; })) + m
-    };
-    var sRect = section.getBoundingClientRect();
-    if (!canvas) {
-      canvas = document.createElement('canvas');
-      canvas.className = 'am-fx';
-      canvas.setAttribute('aria-hidden', 'true');
-      section.appendChild(canvas);
-      ctx = canvas.getContext('2d');
-    }
-    canvas.width = Math.ceil((fxBox.r - fxBox.l) * dpr);
-    canvas.height = Math.ceil((fxBox.b - fxBox.t) * dpr);
-    canvas.style.left = (fxBox.l - sRect.left) + 'px';
-    canvas.style.top = (fxBox.t - sRect.top) + 'px';
-    canvas.style.width = (fxBox.r - fxBox.l) + 'px';
-    canvas.style.height = (fxBox.b - fxBox.t) + 'px';
-  }
-
-  function clamp01(v) { return v < 0 ? 0 : v > 1 ? 1 : v; }
-
-  // p: 0..1. gone = true: squares leave (dissolve); false: squares arrive (re-assembly).
-  function drawSquares(s, p, gone) {
-    var css = s.cs / s.dpr;
-    var ox = s.left - fxBox.l, oy = s.top - fxBox.t;
-    for (var k = 0; k < s.n; k++) {
-      var u = clamp01((p - s.t[k] * 0.7) / 0.3);
-      var a = gone ? 1 - u : u;
-      if (a <= 0) continue;
-      var move = gone ? u : 1 - u;
-      ctx.globalAlpha = a;
-      ctx.drawImage(s.src, s.sx[k], s.sy[k], s.cs, s.cs,
-        ox + s.sx[k] / s.dpr + s.vx[k] * move * DRIFT, oy + s.sy[k] / s.dpr + s.vy[k] * move * DRIFT, css, css);
-    }
-    ctx.globalAlpha = 1;
-  }
-
-  function clearFx() {
-    if (canvas) canvas.style.display = 'none';
-  }
-
-  // Everything that depends on the progress values: which real text is "on", and the squares in between.
+  // The texts are real HTML, moved and faded by the timelines. Here is only which of them is shown at all (the others are hidden from
+  // sight, from the pointer and from assistive tech), decided from the markers the timelines carry.
   function render() {
-    cols.style.visibility = fx.old <= 0 ? '' : 'hidden';
-    copy.style.visibility = (fx.neu >= 0.98 && fx.o2 <= 0) ? 'visible' : 'hidden';
-    copy2.style.visibility = (fx.n2 >= 0.98 && fx.o3 <= 0) ? 'visible' : 'hidden';
-    copy3.style.visibility = fx.n3 >= 0.98 ? 'visible' : 'hidden';
-    // [progress, whose squares, leaving or arriving]
-    var ops = fxS && [[fx.old, fxS[0], true], [fx.neu, fxS[1], false], [fx.o2, fxS[1], true], [fx.n2, fxS[2], false], [fx.o3, fxS[2], true], [fx.n3, fxS[3], false]];
-    var drawing = canvas && ops && ops.some(function (op) { return op[0] > 0 && op[0] < 1; });
-    if (!drawing) { clearFx(); return; }
-    canvas.style.display = 'block';
-    var dpr = fxS[0].dpr;
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.clearRect(0, 0, canvas.width / dpr, canvas.height / dpr);
-    ops.forEach(function (op) { if (op[0] > 0 && op[0] < 1) drawSquares(op[1], op[0], op[2]); });
+    cols.style.visibility = fx.old >= 1 ? 'hidden' : '';
+    copy.style.visibility = (fx.neu > 0 && fx.s2 < 1) ? 'visible' : 'hidden';
+    copy2.style.visibility = (fx.s2 > 0 && fx.s3 < 1) ? 'visible' : 'hidden';
+    copy3.style.visibility = fx.s3 > 0 ? 'visible' : 'hidden';
   }
 
   /* ======================================================================
@@ -360,18 +222,21 @@
 
   function build() {
     killTl();
-    fxReady = false;
     var info = targets();
     if (!info) return false;
     var dy = layout(info);
     computeGate();
     var kids = copies.map(function (c) { return Array.prototype.slice.call(c.children); });
+    var colsText = Array.prototype.slice.call(cols.querySelectorAll('.sec-text, .sec-link'));   // the company text: the blocks that leave
+    colsText.forEach(function (el) { el.style.transition = 'none'; });                         // (the link has a reveal transition of its own)
     var left = machine.offsetLeft + media.offsetLeft;
     gsap.set(media, { x: 0, y: dy });
-    gsap.set(imgs[0], { x: 0 }); gsap.set(kids[0], { x: 0, opacity: 1 });
-    for (var k = 1; k < 3; k++) {                                                    // the other machines wait beyond the right edge of the page
-      gsap.set(medias[k], { x: section.clientWidth - left, y: 0 });
-      gsap.set(imgs[k], { x: 140 }); gsap.set(kids[k], { x: 0, opacity: 1 });          // (their text is not moved: it is shown by the squares, see render())
+    gsap.set(imgs[0], { x: 0 }); gsap.set(colsText, { x: 0, opacity: 1 });
+    for (var k = 0; k < 3; k++) {                                                    // the text of every machine waits to come in from the right...
+      gsap.set(kids[k], { x: 70, opacity: 0 });
+      if (k === 0) continue;
+      gsap.set(medias[k], { x: section.clientWidth - left, y: 0 });                  // ...and the other machines wait beyond the right edge of the page
+      gsap.set(imgs[k], { x: 140 });
     }
 
     // (every tween has its start value written out, so a rebuild never starts from what the previous timeline left behind)
@@ -383,35 +248,40 @@
       tl.fromTo(d.el, { x: 0, y: 0, scale: 1 }, Object.assign({ x: d.x, y: d.y, scale: d.scale, duration: SCENE * 0.7, ease: M.ease.move }, N0), i * M.stagger.base);
     });
     tl.fromTo(media, { y: dy }, Object.assign({ y: 0, duration: SCENE * 0.88, ease: M.ease.move }, N0), SCENE * 0.07);   // photo rises
-    tl.fromTo(fx, { old: 0 }, Object.assign({ old: 1, duration: SCENE * 0.29, ease: M.ease.soft }, N0), SCENE * 0.4);    // old text dissolves
-    tl.fromTo(fx, { neu: 0 }, Object.assign({ neu: 1, duration: SCENE * 0.3, ease: M.ease.soft }, N0), SCENE * 0.66);    // machine text assembles
+    // The text change is the same movement as in the carousel steps: the old text goes (quick, a little to the left, block after block), and the
+    // machine text comes in from the right, block after block, so that it arrives exactly when the scene ends.
+    var enterSpan = TEXT_IN + M.stagger.base * (kids[0].length - 1), leaveSpan = M.dur.micro + M.stagger.tight * (colsText.length - 1);
+    tl.fromTo(colsText, { x: 0, opacity: 1 }, Object.assign({ x: -60, opacity: 0, duration: M.dur.micro, ease: M.ease.in, stagger: M.stagger.tight }, N0), SCENE * 0.4);
+    tl.fromTo(fx, { old: 0 }, Object.assign({ old: 1, duration: leaveSpan, ease: M.ease.linear }, N0), SCENE * 0.4);          // (marks when the old text is gone)
+    tl.fromTo(kids[0], { x: 70, opacity: 0 }, Object.assign({ x: 0, opacity: 1, duration: TEXT_IN, ease: M.ease.out, stagger: M.stagger.base }, N0), SCENE - enterSpan);
+    tl.fromTo(fx, { neu: 0 }, Object.assign({ neu: 1, duration: enterSpan, ease: M.ease.linear }, N0), SCENE - enterSpan);    // (marks that the machine text is coming in)
     tl.to({}, { duration: 0.1 }, SCENE - 0.1);                                       // settle: the scene ends exactly at SCENE
 
-    // Carousel, one timeline for both steps (SLIDE seconds each): the current machine slides out to the left, the next comes in from the
-    // right (photos with a little depth between them). The text works like the first scene's: the text of the machine that leaves dissolves
-    // into squares while its photo goes, and the next one re-assembles from squares once that photo has cleared its column (so it ends with
-    // the step). Same squares, same curve and the same durations as the first scene: the dissolve SCENE x 0.29, the assembly SCENE x 0.3.
-    // Photos and fade values all move in the same step; the way back is the same step played quicker (exit).
+    // Carousel, one timeline for both steps (STEP seconds each): the current machine slides out to the left, the next comes in from the right
+    // (photos with a little depth between them), and the text of the next machine comes in block after block, the same way as in the first scene
+    // (TEXT_IN each). The text of the machine that leaves is gone before the next photo reaches its column, and the new text only appears once that
+    // photo has cleared its column. Photos, their text and the markers all move in the same step; the way back is the same step played quicker (exit).
+    // The step lasts SLIDE, or as long as the text needs to come in.
     var out = left + media.offsetWidth + 60;
     var E = M.ease.move, NI = { immediateRender: false };
     var travel = SLIDE * 0.65;                                                       // a photo crosses the page in this time
-    var dissolve = SCENE * 0.29, assemble = SCENE * 0.3;
+    var textStart = SLIDE * 0.56;                                                    // the new text starts once that photo has cleared its column
+    STEP = Math.max(SLIDE, textStart + TEXT_IN + M.stagger.base * (Math.max(kids[1].length, kids[2].length) - 1));
     tlS = gsap.timeline({ paused: true, onUpdate: render });
-    function step(t0, a, b, oldKey, newKey) {
+    function step(t0, a, b, key) {
       tlS.fromTo(medias[a], { x: 0 }, Object.assign({ x: -out, duration: travel, ease: E }, NI), t0);
       tlS.fromTo(imgs[a], { x: 0 }, Object.assign({ x: -110, duration: travel, ease: E }, NI), t0);
       tlS.fromTo(medias[b], { x: section.clientWidth - left }, Object.assign({ x: 0, duration: travel, ease: E }, NI), t0 + M.delay.hair);
       tlS.fromTo(imgs[b], { x: 140 }, Object.assign({ x: 0, duration: travel, ease: E }, NI), t0 + M.delay.hair);
-      var from = {}, to = {};
-      from[oldKey] = 0; to[oldKey] = 1;
-      tlS.fromTo(fx, from, Object.assign(to, { duration: dissolve, ease: M.ease.soft }, NI), t0);                       // the text that leaves dissolves
-      var from2 = {}, to2 = {};
-      from2[newKey] = 0; to2[newKey] = 1;
-      tlS.fromTo(fx, from2, Object.assign(to2, { duration: assemble, ease: M.ease.soft }, NI), t0 + SLIDE - assemble);   // the next one assembles
+      tlS.fromTo(kids[a], { x: 0, opacity: 1 }, Object.assign({ x: -60, opacity: 0, duration: M.dur.micro, ease: M.ease.in, stagger: M.stagger.tight }, NI), t0);
+      tlS.fromTo(kids[b], { x: 70, opacity: 0 }, Object.assign({ x: 0, opacity: 1, duration: TEXT_IN, ease: M.ease.out, stagger: M.stagger.base }, NI), t0 + textStart);
+      var from = {}; from[key] = 0;
+      var to = { duration: travel, ease: M.ease.linear }; to[key] = 1;
+      tlS.fromTo(fx, from, Object.assign(to, NI), t0);
     }
-    step(0, 0, 1, 'o2', 'n2');
-    step(SLIDE, 1, 2, 'o3', 'n3');
-    tlS.to({}, { duration: 0.02 }, 2 * SLIDE);                                      // settle (the timeline reaches the end of step 2)
+    step(0, 0, 1, 's2');
+    step(STEP, 1, 2, 's3');
+    tlS.to({}, { duration: 0.02 }, 2 * STEP);                                       // settle (the timeline reaches the end of step 2)
     return true;
   }
 
@@ -429,11 +299,17 @@
     var step = stepOf();
     // The fade values are not written here: the timelines carry them. They go back to the start first and then to the frame of this state,
     // so each tween starts from 0 (a tween that first sees a value of 1 would never fade it again) and always draws, even when already there.
-    fx.old = fx.neu = fx.o2 = fx.n2 = fx.o3 = fx.n3 = 0;
+    fx.old = fx.neu = fx.s2 = fx.s3 = 0;
     tl.time(0, true);
     tlS.time(0, true);
     tl.progress(step >= 1 ? 1 : 0, true);
-    tlS.time(step <= 1 ? 0 : (step - 1) * SLIDE, true);
+    tlS.time(step <= 1 ? 0 : (step - 1) * STEP, true);
+    // The text of every machine: where it rests in this state. (A tween that has not started leaves its target as it was, and the blocks of a
+    // text come in one after the other, so each one has to wait where its tween will start from.)
+    copies.forEach(function (c, k) {
+      gsap.set(c.children, k === step - 1 ? { x: 0, opacity: 1 } : k > step - 1 ? { x: 70, opacity: 0 } : { x: -60, opacity: 0 });
+    });
+    gsap.set(cols.querySelectorAll('.sec-text, .sec-link'), step >= 1 ? { x: -60, opacity: 0 } : { x: 0, opacity: 1 });
     render();
     showState();
   }
@@ -468,7 +344,6 @@
     holdUntil = arrivedAt + (strictArrival ? ARRIVE_REST : HOLD);
     lock(true);
     clampToGate();
-    window.requestAnimationFrame(function () { if (arrived && !running()) ensureFx(); });
   }
 
   function release() {
@@ -500,13 +375,12 @@
     if (dirty) { dirty = false; rebuild(); }
     arrived = null;
     needFresh = false;
-    ensureFx();                                                      // (the squares of all the texts: ready already while the page rests)
     state = next;
     if (next === 'FWD') tl.timeScale(1).play(0);
     else if (next === 'REV') tl.timeScale(REVERSE_SPEED).reverse(tl.duration());
     else {                                                           // a carousel step: the playhead of the carousel timeline travels between the two times
-      var back = M.exit(SLIDE);
-      var go = { FWD2: [0, SLIDE, onForward2Done, SLIDE], REV2: [SLIDE, 0, onReverse2Done, back], FWD3: [SLIDE, 2 * SLIDE, onForward3Done, SLIDE], REV3: [2 * SLIDE, SLIDE, onReverse3Done, back] }[next];
+      var back = M.exit(STEP);
+      var go = { FWD2: [0, STEP, onForward2Done, STEP], REV2: [STEP, 0, onReverse2Done, back], FWD3: [STEP, 2 * STEP, onForward3Done, STEP], REV3: [2 * STEP, STEP, onReverse3Done, back] }[next];
       slideTw = tlS.tweenFromTo(go[0], go[1], { duration: go[3], ease: 'none', onComplete: go[2] });
     }
   }
@@ -649,8 +523,8 @@
     });
     cols.style.visibility = '';
     cols.removeAttribute('aria-hidden');
+    gsap.set(cols.querySelectorAll('.sec-text, .sec-link'), { clearProps: 'transform,opacity,transition' });
     section.style.minHeight = '';
-    clearFx();
     state = 'INITIAL'; arrived = null;
     lock(false);
     // simple fade-up when they scroll into view (nothing at all with reduced motion)

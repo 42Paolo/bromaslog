@@ -443,7 +443,6 @@ html.lenis, html.lenis body { height: auto; }
   #chi-siamo:not(.am-flat) .am-link { margin-top: clamp(30px, 3vw, 44px); }
 }
 .am-text + .am-text { margin-top: 16px !important; }   /* machine 2 has three short paragraphs */
-.am-fx { position: absolute; z-index: 3; pointer-events: none; }
 html.is-about-hold { scrollbar-gutter: stable; }
 
 #portfolio {
