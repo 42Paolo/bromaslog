@@ -475,7 +475,7 @@ html.is-about-hold { scrollbar-gutter: stable; }
 .vs__text + .vs__text { margin-top: 22.4px; color: rgba(242, 240, 235, .56); }
 .vs-wrap { position: relative; }
 .vs__line { position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
-.vs__path { fill: none; stroke: rgba(242, 240, 235, .62); stroke-width: 1; }
+.vs__path, .vs__stub { fill: none; stroke: rgba(242, 240, 235, .62); stroke-width: 1; }
 /* with the script the texts wait for the line (they are lit when it reaches them); without it they are simply there */
 .vs-live .vs__title-block, .vs-live .vs__desc { opacity: 0; transition: opacity var(--dur-base) var(--ease-soft); }
 .vs-live .vs__title-block.is-lit, .vs-live .vs__desc.is-lit { opacity: 1; }

@@ -5,7 +5,7 @@
    js/hangar.js sets the variables on .hangar__stage from the scroll position, so it also runs backwards:
      --hg-open   0 closed ... 1 open        --hg-edge   the doors' edge lines (0 closed ... 1 as soon as they part)
      --hg-zoom   the picture settles from 1.16 to 1     --hg-light   it comes up from dark to its own light
-     --hg-a, --hg-b   where the line is drawn up to (full above a, gone below b), --hg-mx   the line on a phone
+     --hg-a   how far down the line is drawn,   --hg-mx   where the line runs on a phone
    Without the script (or with "reduce motion") nothing is held and there are no doors: just the first picture of the video. */
 .hangar { position: relative; z-index: 0; height: 100vh; height: 100svh; background: #000; }
 .hangar__stage { position: relative; height: 100%; overflow: hidden; background: #000; }
@@ -16,12 +16,11 @@
 }
 .hangar__door, .hangar__margin { display: none; }
 
-/* the line, drawn up to --hg-a (full) and fading out down to --hg-b, as on the stops (same curve: js/sectorline.js) */
+/* the line, drawn from the top down to --hg-a (a plain end, like the line of the stops) */
 .hangar__line, .hangar__margin {
-  --hg-d: calc(var(--hg-b, 0px) - var(--hg-a, 0px));
   background: rgba(242, 240, 235, .62);
-  -webkit-mask-image: linear-gradient(to bottom, #000 var(--hg-a, 0px), rgba(0, 0, 0, .65) calc(var(--hg-a, 0px) + var(--hg-d) * .25), rgba(0, 0, 0, .35) calc(var(--hg-a, 0px) + var(--hg-d) * .5), rgba(0, 0, 0, .13) calc(var(--hg-a, 0px) + var(--hg-d) * .75), transparent var(--hg-b, 0px));
-  mask-image: linear-gradient(to bottom, #000 var(--hg-a, 0px), rgba(0, 0, 0, .65) calc(var(--hg-a, 0px) + var(--hg-d) * .25), rgba(0, 0, 0, .35) calc(var(--hg-a, 0px) + var(--hg-d) * .5), rgba(0, 0, 0, .13) calc(var(--hg-a, 0px) + var(--hg-d) * .75), transparent var(--hg-b, 0px));
+  -webkit-mask-image: linear-gradient(to bottom, #000 var(--hg-a, 0px), transparent var(--hg-a, 0px));
+  mask-image: linear-gradient(to bottom, #000 var(--hg-a, 0px), transparent var(--hg-a, 0px));
 }
 
 .hangar--live { height: 260vh; height: 260svh; }

@@ -1,9 +1,9 @@
 /*
  * The end of the last page: a hangar (css/hangar.css has the picture of it).
  * Below the third stop the stage is held on screen while the page scrolls on, and the scroll does three things, in this order:
- *   1. The line of the stops goes on down the seam where two black doors meet. It is drawn while the stage climbs (the same way as the
- *      stretches of the stops: the tip comes down the screen, soft, from the top edge of the stage), so when the stage is held the line
- *      is complete.
+ *   1. A line comes down the seam where two black doors meet. It is drawn while the stage climbs (like the stretches of the line of the
+ *      stops: from 0.9 of a screen before the stage reaches the top until it does, from its top edge down), so when the stage is held the
+ *      line is complete.
  *   2. After a beat (HOLD) the doors slide apart along the line, over OPENED of the held scroll: the line splits in two, one half on
  *      each door, and the video behind comes up from dark and settles (a scale from 1.16 to 1, light from .35 to 1).
  *   3. The video plays while the doors are open, and stays there until the page ends.
@@ -25,8 +25,7 @@
     (params.get('motion') !== 'full' && !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches));
   if (reduced) return;
 
-  var L = window.BromaslogLine || {};                    // the line of the stops (js/sectorline.js): the tip has to look the same here
-  var WIN = L.WIN || 0.6, HEAD = L.HEAD || 0.08, TAIL = L.TAIL || 0.3;
+  var BEFORE = 0.9;          // the line is drawn from this many screens before the stage reaches the top (as in js/sectorline.js)
   var M = window.BromaslogMotion;
   var easeMove = M && M.ease ? M.ease.move : function (p) { return p * p * (3 - 2 * p); };
   var HOLD = 0.10;           // share of the held scroll the doors stay shut (after the line is complete)
@@ -63,11 +62,9 @@
     var y = window.pageYOffset;
     if (y > top - LOAD_AHEAD * vh) load();
 
-    // 1. the line: drawn while the stage climbs (its top edge from WIN + TAIL of the window height to the top)
-    var lead = (WIN + TAIL) * vh;
-    var tip = -TAIL * vh + clamp((y - (top - lead)) / lead) * (1 + 2 * TAIL) * vh;
-    set('--hg-a', (tip - HEAD * vh).toFixed(1) + 'px');
-    set('--hg-b', (tip + TAIL * vh).toFixed(1) + 'px');
+    // 1. the line: drawn from the top edge of the stage down while the stage climbs (a plain end, no fade)
+    var tip = clamp((y - (top - BEFORE * vh)) / (BEFORE * vh)) * vh;
+    set('--hg-a', tip.toFixed(1) + 'px');
 
     // 2. the doors
     var o = clamp((clamp((y - top) / span) - HOLD) / (OPENED - HOLD));
