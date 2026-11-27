@@ -6,7 +6,11 @@
      --hg-open   0 closed ... 1 open        --hg-edge   the doors' edge lines (0 closed ... 1 as soon as they part)
      --hg-zoom   the picture settles from 1.16 to 1     --hg-light   it comes up from dark to its own light
      --hg-a   how far down the line is drawn,   --hg-mx   where the line runs on a phone
-   Without the script (or with "reduce motion") nothing is held and there are no doors: just the first picture of the video. */
+   The sentence sits across the doors, half on each side of the seam, 25px from it like the texts of the stops; the halves slide away with the
+   doors. It is lit when the line reaches it (class is-lit on the stage, set by js/hangar.js) and unfolds from the seam outwards, with the
+   site's tokens: a block that grows = primary, text that appears = base, what leaves is quicker (x --exit-ratio).
+   Without the script (or with "reduce motion") nothing is held and there are no doors: just the first picture of the video
+   (the sentence is still there for screen readers). */
 .hangar { position: relative; z-index: 0; height: 100vh; height: 100svh; background: #000; }
 .hangar__stage { position: relative; height: 100%; overflow: hidden; background: #000; }
 .hangar__video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; background: #000; }
@@ -51,8 +55,39 @@
 .hangar--live .hangar__door--r::after { right: 100%; background: linear-gradient(to left, rgba(0, 0, 0, .75), rgba(0, 0, 0, 0)); }
 .hangar--live .hangar__line { position: absolute; z-index: 1; top: 0; left: 0; width: 1px; height: 100%; }
 
+/* the sentence: half on each door, the same type as the titles of the stops (same hierarchy), 25px from the seam */
+.hangar__half { display: none; }               /* (the whole sentence stays in the page for screen readers: .vision-sr) */
+.hangar--live .hangar__half {
+  position: absolute; z-index: 4; top: 0; bottom: 0; width: 50%; display: flex; align-items: center; pointer-events: none;
+  will-change: transform;
+}
+.hangar--live .hangar__half--l { left: 0; justify-content: flex-end; padding-right: 25px; text-align: right; transform: translate3d(calc(var(--hg-open, 0) * -100%), 0, 0); }
+.hangar--live .hangar__half--r { right: 0; justify-content: flex-start; padding-left: 25px; text-align: left; transform: translate3d(calc(var(--hg-open, 0) * 100%), 0, 0); }
+.hangar__text {
+  margin: 0; max-width: 10em; color: #F2F0EB; font-weight: 500; font-size: clamp(30px, 3.4vw, 58px); line-height: 1.12; letter-spacing: -.025em; text-wrap: balance;
+  /* shut (not lit yet, or the line went back up): nothing of it is seen; it leaves quicker than it arrives */
+  opacity: 0;
+  transition:
+    clip-path calc(var(--dur-primary) * var(--exit-ratio)) var(--ease-in),
+    transform calc(var(--dur-primary) * var(--exit-ratio)) var(--ease-in),
+    opacity calc(var(--dur-base) * var(--exit-ratio)) var(--ease-soft);
+}
+.hangar__half--l .hangar__text { clip-path: inset(-.15em -.1em -.2em 100%); transform: translate3d(.8em, 0, 0); }
+.hangar__half--r .hangar__text { clip-path: inset(-.15em 100% -.2em -.1em); transform: translate3d(-.8em, 0, 0); }
+/* lit: it unfolds from the seam outwards (each half slides away from the seam while it is uncovered) */
+.hangar__stage.is-lit .hangar__text {
+  opacity: 1; clip-path: inset(-.15em -.1em -.2em -.1em); transform: none;
+  transition:
+    clip-path var(--dur-primary) var(--ease-out) var(--delay-short),
+    transform var(--dur-primary) var(--ease-out) var(--delay-short),
+    opacity var(--dur-base) var(--ease-soft) var(--delay-short);
+}
+
 /* on a phone the line of the stops runs down the left margin: it goes on there, and gives way to the doors' edges as they part */
 @media (max-width: 767px) {
   .hangar--live .hangar__margin { display: block; position: absolute; z-index: 3; top: 0; left: var(--hg-mx, 8px); width: 1px; height: 100%; opacity: calc(1 - var(--hg-edge, 0)); }
   .hangar--live .hangar__line { opacity: var(--hg-edge, 0); }
+  .hangar--live .hangar__half--l { padding-left: calc(16 * var(--vr)); padding-right: calc(14 * var(--vr)); }
+  .hangar--live .hangar__half--r { padding-right: calc(16 * var(--vr)); padding-left: calc(14 * var(--vr)); }
+  .hangar__text { font-size: calc(20 * var(--vr)); max-width: none; }   /* 2 lines on each side, in Italian and English */
 }

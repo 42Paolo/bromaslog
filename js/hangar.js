@@ -4,8 +4,11 @@
  *   1. The line of the stops goes on down the seam where two black doors meet. Its tip stays at TIP of the window height (as in
  *      js/sectorline.js), so the line of the stops turns into this one without a break, and while the stage is held (the first HOLD of
  *      the held scroll) the tip goes on down to the bottom edge: when the doors start to part the line is complete.
+ *      The sentence across the doors is lit when the line reaches its top edge (class is-lit), like the titles of the stops, and unfolds
+ *      from the seam outwards (css/hangar.css).
  *   2. After a beat (HOLD) the doors slide apart along the line, over OPENED of the held scroll: the line splits in two, one half on
- *      each door, and the video behind comes up from dark and settles (a scale from 1.16 to 1, light from .35 to 1).
+ *      each door and the halves of the sentence go with the doors, and the video behind comes up from dark and settles (a scale from
+ *      1.16 to 1, light from .35 to 1).
  *   3. The video plays while the doors are open, and stays there until the page ends.
  * Everything is a function of the scroll position, so it runs backwards too: scroll up and the doors close, the line comes back
  * together; when they are shut again the video stops and rewinds, so each time they open it starts from the beginning. The file is the
@@ -32,7 +35,8 @@
   var OPENED = 0.70;         // share of the held scroll at which they are fully open
   var LOAD_AHEAD = 3;        // screens before the stage at which the video starts to be fetched
 
-  var top = 0, span = 1, vh = 0, loaded = false, last = {};
+  var texts = stage.querySelectorAll('.hangar__text');
+  var top = 0, span = 1, vh = 0, textTop = 0, loaded = false, last = {};
 
   function clamp(v) { return v < 0 ? 0 : v > 1 ? 1 : v; }
   function set(name, v) { if (last[name] !== v) { last[name] = v; stage.style.setProperty(name, v); } }
@@ -45,6 +49,9 @@
     top = r.top + window.pageYOffset;
     vh = window.innerHeight;
     span = Math.max(1, r.height - vh);                    // the scroll during which the stage is held
+    var tallest = 0;                                      // the sentence is in the middle of the stage: where its top edge is
+    Array.prototype.forEach.call(texts, function (t) { tallest = Math.max(tallest, t.offsetHeight); });
+    textTop = Math.max(0, (vh - tallest) / 2);
     var eyebrow = document.querySelector('.vs__eyebrow'); // the line of the stops on a phone: halfway between the edge and the texts
     var mx = Math.max(4, eyebrow ? eyebrow.getBoundingClientRect().left / 2 : 8);
     set('--hg-mx', (Math.round(mx) + 0.5) + 'px');
@@ -67,7 +74,9 @@
     // 1. the line: its tip is at TIP of the window while the stage climbs, then (stage held) goes down to the bottom edge during HOLD
     var tipInWindow = vh * (TIP + (1 - TIP) * clamp(p / HOLD));
     var stageTop = Math.max(0, top - y);                    // where the top edge of the stage is in the window
-    set('--hg-a', Math.min(vh, Math.max(0, tipInWindow - stageTop)).toFixed(1) + 'px');
+    var lineLength = Math.min(vh, Math.max(0, tipInWindow - stageTop));
+    set('--hg-a', lineLength.toFixed(1) + 'px');
+    stage.classList.toggle('is-lit', lineLength >= textTop);   // the sentence is lit when the line reaches it (as the titles of the stops are)
 
     // 2. the doors
     var o = clamp((p - HOLD) / (OPENED - HOLD));
