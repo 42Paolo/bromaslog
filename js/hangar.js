@@ -19,7 +19,8 @@
  *      its video plays once it is rising and the second one stops when it is covered. It stays there until the end.
  * Scroll back up and everything is undone: the third picture goes down, then the second, the doors close, the line comes back together. A video
  * that is hidden again stops and rewinds, so each time a picture comes in its video starts from the beginning: the files are the original footage
- * from second 3 (assets/video/aerospace-1280.mp4, automotive-1280.mp4, nautic-1280.mp4), so the beginning is second 3.
+ * from second 3 (assets/video/aerospace-1280.mp4, automotive-1280.mp4, nautic-1280.mp4), so the beginning is second 3. They are cut short on purpose, so
+ * that little has to be downloaded (12 s, 10 s and 10 s, 11 MB in all; they loop); the longer versions are kept in source/video/long (not published).
  * A video is only fetched when its picture is close (LOAD_AHEAD screens for the first, once the doors are half open for the second, once the
  * second picture starts to rise for the third).
  * With "reduce motion" none of this runs: the three pictures are simply one under the other, with their words.
