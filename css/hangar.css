@@ -1,15 +1,17 @@
 /* ---------- the end of the last page: the hangar ----------
    After the three stops the line goes on, down the seam where two black doors meet. Scrolling on, the doors slide apart along the line
    (the line splits in two, one half on each door) and the first picture comes up (AEROSPACE) and starts. Scrolling on again, the second
-   picture (AUTOMOTIVE) rises over it in two halves, the way the black page rose over the white one, and starts. The stage is held on screen
-   during all this (position: sticky), so the scroll length is the length of the hangar (400svh = one held screen + 300svh to scroll through:
-   16svh shut, doors open until 112svh, the first picture until 170svh, the second one rises until 250svh and stays).
+   picture (AUTOMOTIVE) rises over it in two halves, the way the black page rose over the white one, and starts; then the third (NAUTIC) rises
+   over the second in the same way. The stage is held on screen during all this (position: sticky), so the scroll length is the length of the
+   hangar (540svh = one held screen + 440svh to scroll through: 16svh shut, doors open until 112svh, the first picture until 170svh, the second
+   one rises until 250svh, stays until 310svh, the third rises until 390svh and stays).
    js/hangar.js sets the variables on .hangar__stage from the scroll position, so it also runs backwards:
      --hg-open   0 closed ... 1 open        --hg-edge   the doors' edge lines (0 closed ... 1 as soon as they part)
      --hg-zoom   the first picture settles from 1.16 to 1     --hg-light   it comes up from dark to its own light (a black veil, .hangar__dim)
      --hg-text   the sentence's opacity: 1 closed ... 0 open
      --hg-b      the second picture: 1 below the stage ... 0 in place      --hg-lag   how far the left half of it is behind the right one (px)
      --hg-cover  how much the second one covers the first (0 ... 1): the first drifts up a little and darkens
+     --hg-c, --hg-lagc, --hg-coverc   the same three for the third picture over the second
      --hg-a   how far down the line is drawn,   --hg-mx   where the line runs on a phone
    The sentence sits across the doors, half on each side of the seam, 25px from it like the texts of the stops; the halves slide away with the
    doors, growing more transparent as they open. It is lit when the line reaches it (class is-lit on the stage, set by js/hangar.js) and unfolds from the seam outwards, with the
@@ -58,7 +60,7 @@
   mask-image: linear-gradient(to bottom, #000 var(--hg-a, 0px), transparent var(--hg-a, 0px));
 }
 
-.hangar--live { height: 400vh; height: 400svh; }
+.hangar--live { height: 540vh; height: 540svh; }
 .hangar--live .hangar__stage { position: sticky; top: 0; height: 100vh; height: 100svh; }
 .hangar--live .hangar__scene { position: absolute; inset: 0; }
 .hangar--live .hangar__video { visibility: hidden; will-change: transform; }                 /* shut doors: nothing of the picture is drawn (no hairline of it at the edges) */
@@ -72,13 +74,24 @@
    same stepped rise as the black page, js/overlay.js), settling from a slight zoom */
 .hangar--live .hangar__scene--b {
   z-index: 1; visibility: hidden; will-change: transform;
-  transform: translate3d(0, calc(var(--hg-b, 1) * 100%), 0);
+  transform: translate3d(0, calc(var(--hg-b, 1) * 100% - var(--hg-coverc, 0) * 6%), 0);   /* it rises, and drifts up a little when the third one covers it */
   clip-path: polygon(0 var(--hg-lag, 0px), 50% var(--hg-lag, 0px), 50% 0, 100% 0, 100% 100%, 0 100%);
 }
 .hangar--live .hangar__stage.is-b .hangar__scene--b { visibility: visible; }
 .hangar--live .hangar__stage.is-b .hangar__scene--b .hangar__video { visibility: visible; }
 .hangar--live .hangar__scene--b .hangar__video { transform: scale(calc(1 + var(--hg-b, 1) * .14)); }
 .hangar--live .hangar__scene--b .hangar__lockup { transform: scale(calc(1 + var(--hg-b, 1) * .14)); }
+.hangar--live .hangar__scene--b .hangar__dim { opacity: calc(var(--hg-coverc, 0) * .6); }     /* the second picture darkens as the third one covers it */
+/* the third picture: the same rise over the second one */
+.hangar--live .hangar__scene--c {
+  z-index: 2; visibility: hidden; will-change: transform;
+  transform: translate3d(0, calc(var(--hg-c, 1) * 100%), 0);
+  clip-path: polygon(0 var(--hg-lagc, 0px), 50% var(--hg-lagc, 0px), 50% 0, 100% 0, 100% 100%, 0 100%);
+}
+.hangar--live .hangar__stage.is-c .hangar__scene--c { visibility: visible; }
+.hangar--live .hangar__stage.is-c .hangar__scene--c .hangar__video { visibility: visible; }
+.hangar--live .hangar__scene--c .hangar__video { transform: scale(calc(1 + var(--hg-c, 1) * .14)); }
+.hangar--live .hangar__scene--c .hangar__lockup { transform: scale(calc(1 + var(--hg-c, 1) * .14)); }
 /* the shadow the doors cast on the picture (so they have depth): its own layer, moving with the doors, under the word so the word stays clean */
 .hangar--live .hangar__cast { display: block; position: absolute; z-index: 1; top: 0; bottom: 0; width: 50%; pointer-events: none; opacity: var(--hg-edge, 0); will-change: transform; }
 .hangar--live .hangar__cast--l { left: 0; transform: translate3d(calc(var(--hg-open, 0) * -100%), 0, 0); }

@@ -22,7 +22,7 @@
   <link rel="stylesheet" href="css/motion.css?v=20261265">
   <link rel="stylesheet" href="css/preloader.css?v=20261150">
   <link rel="stylesheet" href="css/site.css?v=20261309">
-  <link rel="stylesheet" href="css/hangar.css?v=20261316">
+  <link rel="stylesheet" href="css/hangar.css?v=20261317">
   <link rel="stylesheet" href="css/contact.css?v=20261260">
 </head>
 <body id="top">
@@ -265,15 +265,16 @@
 
       </div>
 
-      <!-- The end of the page: a hangar, with the two sectors one after the other. The line goes on down the seam where two black doors meet.
+      <!-- The end of the page: a hangar, with the three sectors one after the other. The line goes on down the seam where two black doors meet.
            A sentence sits across the doors, half on each (it is lit when the line reaches it, unfolding from the seam outwards); scrolling on,
            the doors slide apart along the line, taking the halves with them, and the first picture starts (AEROSPACE: from the beginning of
            assets/video/aerospace-1280.mp4, the original footage from second 3; the word is already there behind the doors, which uncover it
            from the middle outwards). Scrolling on again, the second picture (AUTOMOTIVE: assets/video/automotive-1280.mp4, the rally footage
-           from second 3) rises over the first one in two halves, like the black page rose over the white one, and starts. Each picture has
-           its word in the middle and a small index in the lower left corner (01 / 02, 02 / 02). Texts in js/i18n.js: hangar.l / hangar.r (the two halves of the
+           from second 3) rises over the first one in two halves, like the black page rose over the white one, and starts; then the third
+           (NAUTIC: assets/video/nautic-1280.mp4, a fast ferry seen from above, from second 3 of the original, in source/video/nautic.mp4) rises over the
+           second one in the same way. Each picture has its word in the middle and a small index in the lower left corner (01 / 03, 02 / 03, 03 / 03). Texts in js/i18n.js: hangar.l / hangar.r (the two halves of the
            sentence: line 1 of the left half goes on in line 1 of the right half, and the same for line 2, so it reads straight across the seam, and the
-           two halves are about as wide as each other) and hangar.sr (the whole sentence, for screen readers). css/hangar.css, js/hangar.js. Without the script it is the two
+           two halves are about as wide as each other) and hangar.sr (the whole sentence, for screen readers). css/hangar.css, js/hangar.js. Without the script it is the three
            pictures one under the other, with their words. -->
       <div class="hangar" id="hangar">
         <div class="hangar__stage">
@@ -284,13 +285,20 @@
             <div class="hangar__cast hangar__cast--l" aria-hidden="true"></div>
             <div class="hangar__cast hangar__cast--r" aria-hidden="true"></div>
             <div class="hangar__word"><div class="hangar__lockup"><p class="hangar__word-text">AEROSPACE</p></div></div>
-            <p class="hangar__idx">01 / 02</p>
+            <p class="hangar__idx">01 / 03</p>
           </div>
           <div class="hangar__scene hangar__scene--b">
             <video class="hangar__video" muted playsinline loop preload="none" poster="assets/images/automotive-poster.jpg" data-src="assets/video/automotive-1280.mp4" aria-hidden="true"></video>
+            <div class="hangar__dim" aria-hidden="true"></div>
             <div class="hangar__shade" aria-hidden="true"></div>
             <div class="hangar__word"><div class="hangar__lockup"><p class="hangar__word-text">AUTOMOTIVE</p></div></div>
-            <p class="hangar__idx">02 / 02</p>
+            <p class="hangar__idx">02 / 03</p>
+          </div>
+          <div class="hangar__scene hangar__scene--c">
+            <video class="hangar__video" muted playsinline loop preload="none" poster="assets/images/nautic-poster.jpg" data-src="assets/video/nautic-1280.mp4" aria-hidden="true"></video>
+            <div class="hangar__shade" aria-hidden="true"></div>
+            <div class="hangar__word"><div class="hangar__lockup"><p class="hangar__word-text">NAUTIC</p></div></div>
+            <p class="hangar__idx">03 / 03</p>
           </div>
           <div class="hangar__door hangar__door--l" aria-hidden="true"></div>
           <div class="hangar__door hangar__door--r" aria-hidden="true"><span class="hangar__line"></span></div>
@@ -359,7 +367,7 @@
   <script src="js/textreveal.js?v=20261261"></script>
   <script src="js/overlay.js?v=20261300"></script>
   <script src="js/sectorline.js?v=20261309"></script>
-  <script src="js/hangar.js?v=20261308"></script>
+  <script src="js/hangar.js?v=20261309"></script>
   <script src="js/aboutmorph.js?v=20261274"></script>
   <script src="js/site.js?v=20261260"></script>
   <script src="js/i18n.js?v=20261303"></script>
