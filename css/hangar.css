@@ -107,7 +107,7 @@
 .hangar--live .hangar__half--l { left: 0; justify-content: flex-end; padding-right: 25px; text-align: right; transform: translate3d(calc(var(--hg-open, 0) * -100%), 0, 0); }
 .hangar--live .hangar__half--r { right: 0; justify-content: flex-start; padding-left: 25px; text-align: left; transform: translate3d(calc(var(--hg-open, 0) * 100%), 0, 0); }
 .hangar__text {
-  margin: 0; max-width: 10em; color: #F2F0EB; font-weight: 500; font-size: clamp(30px, 3.4vw, 58px); line-height: 1.12; letter-spacing: -.025em; text-wrap: balance;
+  margin: 0; white-space: nowrap; color: #F2F0EB; font-weight: 500; font-size: clamp(30px, 3.4vw, 58px); line-height: 1.12; letter-spacing: -.025em;   /* two lines, never wrapped by the browser: line 1 of the left half goes on in line 1 of the right half (same for line 2), so the sentence reads straight across the seam */
   /* shut (not lit yet, or the line went back up): nothing of it is seen; it leaves quicker than it arrives */
   opacity: 0;
   transition:
@@ -132,6 +132,6 @@
   .hangar--live .hangar__line { opacity: var(--hg-edge, 0); }
   .hangar--live .hangar__half--l { padding-left: calc(16 * var(--vr)); padding-right: calc(14 * var(--vr)); }
   .hangar--live .hangar__half--r { padding-right: calc(16 * var(--vr)); padding-left: calc(14 * var(--vr)); }
-  .hangar__text { font-size: calc(20 * var(--vr)); max-width: none; }   /* 2 lines on each side, in Italian and English */
+  .hangar__text { font-size: calc(20 * var(--vr)); }   /* two lines on each side, never wrapped (the longest is "tessile al servizio") */
   .hangar__idx { left: calc(16 * var(--vr)); }
 }
