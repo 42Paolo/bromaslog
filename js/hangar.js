@@ -62,7 +62,42 @@
   [videoA, videoB, videoC].forEach(function (v) { v.muted = true; v.defaultMuted = true; });   // (the attribute is not enough for every browser to let it play by itself)
   hangar.classList.add('hangar--live');
 
+  // The two halves of the sentence must be exactly alike, line for line: line 1 of the left half as wide as line 1 of the right half, and the
+  // same for line 2, so no line sticks out over the one above it. The wording is chosen so that the four lines are nearly as wide as each
+  // other (they differ by a few per cent); here a hair of letter-spacing, in em so it scales with the type, makes them exactly as wide as
+  // their average (the width of the lines you can see, not counting the space after the last letter). It is measured from the font the
+  // visitor really has, so it holds on any machine. The lines of the left half also get the opposite margin, so the last letters
+  // of all of them end at the same distance from the seam.
+  var range = document.createRange();
+  function fitText() {
+    var lines = stage.querySelectorAll('.hangar__text .hl');
+    var i, el, n = lines.length;
+    if (!n) return;
+    for (i = 0; i < n; i++) { lines[i].style.letterSpacing = ''; lines[i].style.marginRight = ''; }   // from the natural widths
+    var ink = [], sum = 0, fs = 0, base = 0;
+    for (i = 0; i < n; i++) {
+      el = lines[i];
+      var cs = window.getComputedStyle(el);
+      fs = parseFloat(cs.fontSize) || 0;
+      base = (parseFloat(cs.letterSpacing) || 0) / (fs || 1);                // the letter-spacing of the type, in em
+      range.selectNodeContents(el);
+      var w = range.getBoundingClientRect().width - base * fs;                // the width of the visible letters (the space after the last one is left out)
+      if (!(w > 0) || !(fs > 0)) return;                                      // not on screen (nothing to fit)
+      ink.push(w); sum += w;
+    }
+    var target = sum / n;
+    for (i = 0; i < n; i++) {
+      el = lines[i];
+      var gaps = el.textContent.length - 1;
+      if (gaps < 1) continue;
+      var d = (target - ink[i]) / fs / gaps;                                  // em of letter-spacing to add to every gap of this line
+      el.style.letterSpacing = (base + d).toFixed(5) + 'em';
+      if (el.closest('.hangar__half--l')) el.style.marginRight = (-d).toFixed(5) + 'em';
+    }
+  }
+
   function measure() {
+    fitText();
     var r = hangar.getBoundingClientRect();
     top = r.top + window.pageYOffset;
     vh = window.innerHeight;

@@ -128,6 +128,7 @@
     transform calc(var(--dur-primary) * var(--exit-ratio)) var(--ease-in),
     opacity calc(var(--dur-base) * var(--exit-ratio)) var(--ease-soft);
 }
+.hangar__text .hl { display: block; }          /* one line each; js/hangar.js makes the four lines (two on each half) exactly as wide as each other */
 .hangar__half--l .hangar__text { clip-path: inset(-.15em -.1em -.2em 100%); transform: translate3d(.8em, 0, 0); }
 .hangar__half--r .hangar__text { clip-path: inset(-.15em 100% -.2em -.1em); transform: translate3d(-.8em, 0, 0); }
 /* lit: it unfolds from the seam outwards (each half slides away from the seam while it is uncovered) */
