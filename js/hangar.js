@@ -12,7 +12,8 @@
  *      the doors) comes up from dark and settles (a scale from 1.16 to 1, a black veil that goes away).
  *   3. The first video plays while the doors are open.
  *   4. From B_FROM_VH to B_TO_VH the second picture (AUTOMOTIVE) rises over the first one in two halves, the way the black page rose over the
- *      white one (the right half leads, the left starts a third of the distance behind); the first picture drifts up a little and darkens
+ *      white one, but the second picture is mirrored: its LEFT half leads and the right one starts a third of the distance behind; the third one
+ *      rises the way the black page does, right half first); the first picture drifts up a little and darkens
  *      under it. The second video plays once it is rising, and the first one stops when it is covered.
  *   5. From C_FROM_VH to C_TO_VH the third picture (NAUTIC) rises over the second one in the same way (the second drifts up and darkens under it);
  *      its video plays once it is rising and the second one stops when it is covered. It stays there until the end.
@@ -39,7 +40,7 @@
 
   var M = window.BromaslogMotion;
   var easeMove = M && M.ease ? M.ease.move : function (p) { return p * p * (3 - 2 * p); };
-  var LAG = 0.33;            // the left half of the second picture starts this share of its distance behind the right one (as in js/overlay.js)
+  var LAG = 0.33;            // the half of a picture that follows starts this share of its distance behind the half that leads (as in js/overlay.js); the second picture: left leads; the third: right leads
   // the held scroll, in screens (the hangar is 540svh: 100svh held + 440svh of these)
   var HOLD_VH = 0.16;        // the doors stay shut for a beat, with the line complete
   var OPEN_VH = 1.12;        // the doors are fully open

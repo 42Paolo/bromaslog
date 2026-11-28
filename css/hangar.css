@@ -9,9 +9,9 @@
      --hg-open   0 closed ... 1 open        --hg-edge   the doors' edge lines (0 closed ... 1 as soon as they part)
      --hg-zoom   the first picture settles from 1.16 to 1     --hg-light   it comes up from dark to its own light (a black veil, .hangar__dim)
      --hg-text   the sentence's opacity: 1 closed ... 0 open
-     --hg-b      the second picture: 1 below the stage ... 0 in place      --hg-lag   how far the left half of it is behind the right one (px)
+     --hg-b      the second picture: 1 below the stage ... 0 in place      --hg-lag   how far the right half of it is behind the left one (px): the left half leads
      --hg-cover  how much the second one covers the first (0 ... 1): the first drifts up a little and darkens
-     --hg-c, --hg-lagc, --hg-coverc   the same three for the third picture over the second
+     --hg-c, --hg-lagc, --hg-coverc   the same three for the third picture over the second (there the right half leads and the left one is behind)
      --hg-a   how far down the line is drawn,   --hg-mx   where the line runs on a phone
    The sentence sits across the doors, half on each side of the seam, 25px from it like the texts of the stops; the halves slide away with the
    doors, growing more transparent as they open. It is lit when the line reaches it (class is-lit on the stage, set by js/hangar.js) and unfolds from the seam outwards, with the
@@ -70,12 +70,12 @@
 .hangar--live .hangar__scene--a .hangar__lockup { transform: scale(var(--hg-zoom, 1)); }
 .hangar--live .hangar__dim { z-index: 1; will-change: opacity; opacity: calc(1 - var(--hg-light, 1) + var(--hg-cover, 0) * .6); }   /* the veil: dark at first, then the first picture darkens again as the second covers it */
 .hangar--live .hangar__shade { z-index: 1; }
-/* the second picture: it waits below the stage and rises over the first one in two halves (the right half leads, the left one starts --hg-lag px lower: the
-   same stepped rise as the black page, js/overlay.js), settling from a slight zoom */
+/* the second picture: it waits below the stage and rises over the first one in two halves, stepped like the rise of the black page
+   (js/overlay.js) but mirrored: the LEFT half leads and the right one starts --hg-lag px lower; it settles from a slight zoom */
 .hangar--live .hangar__scene--b {
   z-index: 1; visibility: hidden; will-change: transform;
   transform: translate3d(0, calc(var(--hg-b, 1) * 100% - var(--hg-coverc, 0) * 6%), 0);   /* it rises, and drifts up a little when the third one covers it */
-  clip-path: polygon(0 var(--hg-lag, 0px), 50% var(--hg-lag, 0px), 50% 0, 100% 0, 100% 100%, 0 100%);
+  clip-path: polygon(0 0, 50% 0, 50% var(--hg-lag, 0px), 100% var(--hg-lag, 0px), 100% 100%, 0 100%);
 }
 .hangar--live .hangar__stage.is-b .hangar__scene--b { visibility: visible; }
 .hangar--live .hangar__stage.is-b .hangar__scene--b .hangar__video { visibility: visible; }
