@@ -1,0 +1,104 @@
+/*
+ * The footer: the last thing on the page, white (the same white as the second page, #fff, with the same ink, #0a0b0d).
+ * It is made the way the rest of the site is made: sizes are calc(N * var(--vr)) at the design size, small labels in IBM Plex Mono,
+ * everything else in Helvetica Neue, hairlines instead of boxes, and the content appears with the site's own reveal (data-reveal, js/site.js).
+ *
+ *   1. Contact: the title and three columns (design office, registered office, operating site), the way the black page is set in columns.
+ *   2. Funding: three levels, each under a hairline: the CarbonTwist logo, the band of the Coesione Italia 21-27 logos, the band of the
+ *      POR CreO 2014-2020 logos. The bands are the official ones, unchanged (assets/images/funding/*.svg, converted from the PDFs of the
+ *      Regione Toscana kits). On a phone a band is shown in two parts that can be read (the same file, cropped here with --x / --w / --W / --H).
+ *   3. Bar: the Bromaslog mark, copyright, privacy, back to top.
+ */
+.site-footer {
+  position: relative;
+  z-index: 2;
+  background: #fff;
+  color: #0a0b0d;
+  /* the top padding keeps the fixed brand and bar clear of the first line */
+  padding: calc(132 * var(--vr)) var(--pad-x) calc(30 * var(--vr));
+}
+.site-footer a { color: inherit; text-decoration: none; }
+.site-footer img { display: block; max-width: 100%; height: auto; }
+
+/* ---- 1. contact ---- */
+.sf__contact {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  column-gap: calc(24 * var(--vr));
+  align-items: start;
+  padding-top: calc(32 * var(--vr));
+  border-top: 1px solid rgba(10, 11, 13, .14);
+}
+.sf__title { margin: 0; font-weight: 500; font-size: calc(60 * var(--vr)); line-height: .98; letter-spacing: -.03em; }
+.sf__label {
+  margin: 0 0 calc(18 * var(--vr));
+  font: 400 calc(12 * var(--vr)) / 1.4 var(--font-mono);
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  opacity: .55;
+}
+.sf__text { margin: 0; font: 400 calc(18 * var(--vr)) / 1.45 var(--font-sans); font-style: normal; color: rgba(10, 11, 13, .82); }
+.sf__text > span, .sf__text > a { display: block; width: fit-content; }
+.sf__text--links { margin-top: calc(18 * var(--vr)); }
+.sf__text > a {
+  background: linear-gradient(currentColor, currentColor) 0 100% / 0 1px no-repeat;
+  transition: background-size var(--dur-fast) var(--ease-out);
+}
+.sf__text > a:hover, .sf__text > a:focus-visible { background-size: 100% 1px; }
+.sf__text > a:focus-visible { outline: 2px solid #0a0b0d; outline-offset: 4px; }
+
+/* ---- 2. funding ---- */
+.sf__funding { margin-top: calc(120 * var(--vr)); }
+.sf__level { padding: calc(36 * var(--vr)) 0; border-top: 1px solid rgba(10, 11, 13, .14); }
+.sf__project { display: block; width: calc(330 * var(--vr)); max-width: 100%; }
+.sf__band { display: block; width: 100%; }
+.sf__band .sf__full { width: 100%; }
+.sf__crop { display: none; }
+.sf__band:focus-visible, .sf__project:focus-visible { outline: 2px solid #0a0b0d; outline-offset: 6px; }
+
+/* ---- 3. bar ---- */
+.sf__bar {
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
+  align-items: center;
+  column-gap: calc(40 * var(--vr));
+  margin-top: calc(48 * var(--vr));
+  padding-top: calc(28 * var(--vr));
+  border-top: 1px solid rgba(10, 11, 13, .14);
+  font: 400 calc(11 * var(--vr)) / 1.5 var(--font-mono);
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: rgba(10, 11, 13, .62);
+}
+.sf__bar p { margin: 0; }
+.sf__mark { display: block; width: calc(44 * var(--vr)); }
+.sf__bar a { transition: color var(--dur-micro) var(--ease-soft); }
+.sf__bar a:hover, .sf__bar a:focus-visible { color: #0a0b0d; }
+.sf__bar a:focus-visible { outline: 2px solid #0a0b0d; outline-offset: 4px; }
+.sf__top { display: inline-flex; align-items: center; gap: .7em; }
+.sf__arr { display: inline-block; transition: transform var(--dur-micro) var(--ease-out); }
+.sf__top:hover .sf__arr, .sf__top:focus-visible .sf__arr { transform: translateY(-3px); }
+
+/* ---- phone ---- */
+@media (max-width: 767px) {
+  .site-footer { padding: calc(104 * var(--vr)) var(--pad-x) calc(24 * var(--vr)); }
+  .sf__contact { grid-template-columns: 1fr; padding-top: calc(28 * var(--vr)); }
+  .sf__title { font-size: calc(35 * var(--vr)); margin-bottom: calc(40 * var(--vr)); }
+  .sf__col { padding-top: calc(24 * var(--vr)); margin-top: calc(24 * var(--vr)); border-top: 1px solid rgba(10, 11, 13, .14); }
+  .sf__text { font-size: calc(16 * var(--vr)); }
+  .sf__funding { margin-top: calc(72 * var(--vr)); }
+  .sf__level { padding: calc(28 * var(--vr)) 0; }
+  .sf__project { width: calc(240 * var(--vr)); }
+
+  /* the band, in two parts at the same scale: the whole band would be too small to read */
+  .sf__band { display: flex; flex-direction: column; gap: calc(20 * var(--vr)); }
+  .sf__band .sf__full { display: none; }
+  .sf__crop { display: block; position: relative; overflow: hidden; width: calc(var(--s, 1) * 100%); aspect-ratio: var(--w) / var(--H); }
+  .sf__crop img { position: absolute; top: 0; left: calc(var(--x) / var(--w) * -100%); height: 100%; width: calc(var(--W) / var(--w) * 100%); max-width: none; }
+
+  .sf__bar { grid-template-columns: 1fr auto; row-gap: calc(18 * var(--vr)); margin-top: calc(40 * var(--vr)); }
+  .sf__mark { grid-row: 1; grid-column: 1; width: calc(40 * var(--vr)); }
+  .sf__top { grid-row: 1; grid-column: 2; }
+  .sf__legal { grid-row: 2; grid-column: 1 / -1; }
+  .sf__privacy { grid-row: 3; grid-column: 1 / -1; }
+}

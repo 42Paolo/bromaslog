@@ -31,12 +31,13 @@
   });
 })();
 
-/* The brand (top-left, fixed) turns dark while it is over the white second page. */
+/* The brand (top-left, fixed) turns dark while it is over the white second page or the white footer. */
 (function () {
   'use strict';
   var brand = document.querySelector('.site-brand');
   var page = document.getElementById('chi-siamo');
   var next = document.getElementById('portfolio') || document.getElementById('visione');   // the black page that slides over the white one
+  var foot = document.getElementById('footer');                                           // the white footer at the end
   if (!brand || !page) return;
   var queued = false;
   function schedule() {                                 // once per frame, however many scroll events came
@@ -49,7 +50,9 @@
     var mid = (b.top + b.bottom) / 2;
     var s = page.getBoundingClientRect();
     var covered = next ? next.getBoundingClientRect().top <= mid : false;
-    brand.classList.toggle('on-light', s.top < mid && s.bottom > mid && !covered);
+    var f = foot ? foot.getBoundingClientRect() : null;
+    var onFoot = !!f && f.top < mid && f.bottom > mid;
+    brand.classList.toggle('on-light', (s.top < mid && s.bottom > mid && !covered) || onFoot);
   }
   window.addEventListener('scroll', schedule, { passive: true });
   window.addEventListener('resize', schedule);
@@ -94,4 +97,10 @@
       if (!seen) video.pause(); else if (loaded) start();
     }, { threshold: 0, rootMargin: '-2px 0px -2px 0px' }).observe(hero);   // (the margin: a first screen that only touches the edge of the window does not count as seen)
   }
+})();
+
+/* The year in the footer. */
+(function () {
+  'use strict';
+  Array.prototype.forEach.call(document.querySelectorAll('[data-year]'), function (el) { el.textContent = new Date().getFullYear(); });
 })();
