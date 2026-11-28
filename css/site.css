@@ -207,7 +207,7 @@ html.is-switching-lang .nav-links a { transition: none; }
   align-items: center;
   pointer-events: none;
 }
-.site-tagline { width: max-content; max-width: 50vw; text-wrap: pretty; pointer-events: auto; }   /* no forced line breaks: a line breaks only when the text reaches the max width (like icomat), so it uses the free space */
+.site-tagline { width: max-content; max-width: 50vw; text-wrap: pretty; pointer-events: auto; }   /* the two breaks are set in the text (<br>); a line breaks further only if it reaches the max width */
 .site-claim {
   margin: 0;                                   /* the two texts are one block: no gap between them */
   font: 500 calc(18 * var(--vr)) / 1.12 var(--font-sans);          /* icomat: 18 */
@@ -225,6 +225,7 @@ html.is-switching-lang .nav-links a { transition: none; }
   .site-hero { padding: 0 calc(16 * var(--vr)) calc(36 * var(--vr)); }
   .site-tagline-wrap { position: static; display: block; order: 3; margin: calc(28 * var(--vr)) 0 0; }
   .site-tagline { width: auto; max-width: 34ch; }
+  .site-tagline br { display: none; }                         /* on a phone the text just flows (a space stands before every <br>) */
   .site-claim { font-size: calc(16 * var(--vr)); }
   .site-sub { font-size: calc(16 * var(--vr)); }
 }
